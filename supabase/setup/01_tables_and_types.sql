@@ -399,3 +399,10 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON public.audit_logs (created_at DESC);
 CREATE INDEX IF NOT EXISTS notifications_profile_unread_idx ON public.notifications (profile_id) WHERE read_at IS NULL;
+
+-- Guarantee all enum columns are present even if types were dropped with CASCADE previously
+ALTER TABLE public.course_registrations ADD COLUMN IF NOT EXISTS status public.course_registration_status NOT NULL DEFAULT 'registered';
+ALTER TABLE public.final_results ADD COLUMN IF NOT EXISTS workflow_status public.result_workflow_status NOT NULL DEFAULT 'draft';
+ALTER TABLE public.student_charges ADD COLUMN IF NOT EXISTS status public.charge_status NOT NULL DEFAULT 'pending';
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS provider public.payment_provider NOT NULL DEFAULT 'cash';
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS status public.payment_status NOT NULL DEFAULT 'pending';

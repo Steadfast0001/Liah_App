@@ -4,6 +4,13 @@
 -- https://supabase.com/dashboard/project/nqdlptrodovwbtqabxyu/sql/new
 -- =============================================================================
 
+-- Guarantee all enum columns exist (in case custom types were dropped with CASCADE in earlier runs)
+ALTER TABLE public.course_registrations ADD COLUMN IF NOT EXISTS status public.course_registration_status NOT NULL DEFAULT 'registered';
+ALTER TABLE public.final_results ADD COLUMN IF NOT EXISTS workflow_status public.result_workflow_status NOT NULL DEFAULT 'draft';
+ALTER TABLE public.student_charges ADD COLUMN IF NOT EXISTS status public.charge_status NOT NULL DEFAULT 'pending';
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS provider public.payment_provider NOT NULL DEFAULT 'cash';
+ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS status public.payment_status NOT NULL DEFAULT 'pending';
+
 -- 1. Enable RLS on all public tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
