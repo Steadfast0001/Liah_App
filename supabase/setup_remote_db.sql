@@ -1,10 +1,54 @@
 -- =============================================================================
--- Liah Academy SMS — Complete Remote Database Setup Script
--- Run this in your Supabase SQL Editor:
--- https://supabase.com/dashboard/project/nqdlptrodovwbtqabxyu/sql/new
+-- Liah Academy SMS — Complete Remote Database Setup (Clean SQL for Supabase)
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ---------------------------------------------------------------------------
+-- 0. Custom Types
+-- ---------------------------------------------------------------------------
+DROP TYPE IF EXISTS public.course_registration_status CASCADE;
+CREATE TYPE public.course_registration_status AS ENUM (
+  'registered',
+  'dropped',
+  'completed',
+  'failed'
+);
+
+DROP TYPE IF EXISTS public.result_workflow_status CASCADE;
+CREATE TYPE public.result_workflow_status AS ENUM (
+  'draft',
+  'submitted',
+  'approved',
+  'finalized',
+  'published'
+);
+
+DROP TYPE IF EXISTS public.charge_status CASCADE;
+CREATE TYPE public.charge_status AS ENUM (
+  'pending',
+  'partial',
+  'paid',
+  'waived',
+  'overdue'
+);
+
+DROP TYPE IF EXISTS public.payment_provider CASCADE;
+CREATE TYPE public.payment_provider AS ENUM (
+  'mtn_momo',
+  'orange_money',
+  'bank',
+  'cash'
+);
+
+DROP TYPE IF EXISTS public.payment_status CASCADE;
+CREATE TYPE public.payment_status AS ENUM (
+  'pending',
+  'processing',
+  'verified',
+  'failed',
+  'refunded'
+);
 
 -- ---------------------------------------------------------------------------
 -- 1. Identity & Profiles
@@ -170,7 +214,7 @@ CREATE TABLE IF NOT EXISTS public.staff_assignments (
 );
 
 -- ---------------------------------------------------------------------------
--- 4. Enrollments, Registrations & Results
+-- 4. Enrollments & Registrations
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.student_enrollments (
@@ -184,12 +228,6 @@ CREATE TABLE IF NOT EXISTS public.student_enrollments (
   UNIQUE (student_id, semester_id)
 );
 
-DO $$ BEGIN
-  CREATE TYPE public.course_registration_status AS ENUM ('registered', 'dropped', 'completed', 'failed');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
-
 CREATE TABLE IF NOT EXISTS public.course_registrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID NOT NULL REFERENCES public.students (id),
@@ -202,12 +240,6 @@ CREATE TABLE IF NOT EXISTS public.course_registrations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (student_id, course_offering_id)
 );
-
-DO $$ BEGIN
-  CREATE TYPE public.result_workflow_status AS ENUM ('draft', 'submitted', 'approved', 'finalized', 'published');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
 
 CREATE TABLE IF NOT EXISTS public.assessment_configs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -294,12 +326,6 @@ CREATE TABLE IF NOT EXISTS public.semester_fee_rules (
   UNIQUE (semester_id, fee_category_id)
 );
 
-DO $$ BEGIN
-  CREATE TYPE public.charge_status AS ENUM ('pending', 'partial', 'paid', 'waived', 'overdue');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
-
 CREATE TABLE IF NOT EXISTS public.student_charges (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID NOT NULL REFERENCES public.students (id),
@@ -312,13 +338,6 @@ CREATE TABLE IF NOT EXISTS public.student_charges (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-DO $$ BEGIN
-  CREATE TYPE public.payment_provider AS ENUM ('mtn_momo', 'orange_money', 'bank', 'cash');
-  CREATE TYPE public.payment_status AS ENUM ('pending', 'processing', 'verified', 'failed', 'refunded');
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
 
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -344,7 +363,7 @@ CREATE TABLE IF NOT EXISTS public.payment_events (
 );
 
 -- ---------------------------------------------------------------------------
--- 6. Documents, Announcements, Notifications & Audit
+-- 6. Documents, Notifications, Audit
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.stored_documents (
@@ -396,9 +415,6 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS audit_logs_created_at_idx ON public.audit_logs (created_at DESC);
-CREATE INDEX IF NOT EXISTS notifications_profile_unread_idx ON public.notifications (profile_id) WHERE read_at IS NULL;
-
 -- ---------------------------------------------------------------------------
 -- 7. Roles & Permissions RBAC
 -- ---------------------------------------------------------------------------
@@ -437,8 +453,8 @@ CREATE TABLE IF NOT EXISTS public.profile_roles (
 
 -- Seed Roles
 INSERT INTO public.roles (code, name, description, is_system) VALUES
-  ('super_admin', 'Super Admin', 'Full system control via privileged functions', TRUE),
-  ('admin', 'Administrator', 'Admissions, students, finance review, result approval', TRUE),
+  ('super_admin', 'Super Admin', 'Full system control', TRUE),
+  ('admin', 'Administrator', 'Admissions, students, finance, results', TRUE),
   ('lecturer', 'Lecturer', 'Assigned courses, grades, attendance', TRUE),
   ('student', 'Student', 'Registration, fees, results, transcripts', TRUE)
 ON CONFLICT (code) DO NOTHING;
@@ -461,7 +477,6 @@ INSERT INTO public.permissions (code, name, domain, description) VALUES
   ('audit.read', 'View audit log', 'audit', 'Read audit trail')
 ON CONFLICT (code) DO NOTHING;
 
--- Seed Role Permissions
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM public.roles r CROSS JOIN public.permissions p
 WHERE r.code = 'super_admin' ON CONFLICT DO NOTHING;
@@ -471,8 +486,7 @@ SELECT r.id, p.id FROM public.roles r
 JOIN public.permissions p ON p.code IN (
   'users.manage', 'students.read', 'students.write', 'academics.manage',
   'grades.approve', 'finance.read', 'finance.verify'
-)
-WHERE r.code = 'admin' ON CONFLICT DO NOTHING;
+) WHERE r.code = 'admin' ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM public.roles r
@@ -485,11 +499,15 @@ JOIN public.permissions p ON p.code IN ('registration.manage', 'finance.read', '
 WHERE r.code = 'student' ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------------------
--- 8. Functions, Triggers & Auth Helpers
+-- 8. Functions & Triggers
 -- ---------------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $func$
 DECLARE
   v_full_name TEXT;
   v_phone TEXT;
@@ -518,7 +536,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$;
+$func$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -526,41 +544,61 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 CREATE OR REPLACE FUNCTION public.has_role(role_code TEXT)
-RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.profile_roles pr
     JOIN public.roles r ON r.id = pr.role_id
     WHERE pr.profile_id = auth.uid() AND r.code = role_code
   );
-$$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.has_permission(permission_code TEXT)
-RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.profile_roles pr
     JOIN public.role_permissions rp ON rp.role_id = pr.role_id
     JOIN public.permissions p ON p.id = rp.permission_id
     WHERE pr.profile_id = auth.uid() AND p.code = permission_code
   );
-$$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.is_student_owner(student_row_id UUID)
-RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.students s
     WHERE s.id = student_row_id AND s.profile_id = auth.uid()
   );
-$$;
+$func$;
 
 CREATE OR REPLACE FUNCTION public.user_has_permission(p_user_id UUID, p_permission_code TEXT)
-RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $func$
   SELECT EXISTS (
     SELECT 1 FROM public.profile_roles pr
     JOIN public.role_permissions rp ON rp.role_id = pr.role_id
     JOIN public.permissions p ON p.id = rp.permission_id
     WHERE pr.profile_id = p_user_id AND p.code = p_permission_code
   );
-$$;
+$func$;
 
 CREATE SEQUENCE IF NOT EXISTS public.student_matricule_seq START WITH 1 INCREMENT BY 1;
 
@@ -568,7 +606,11 @@ CREATE OR REPLACE FUNCTION public.generate_student_matricule(
   p_program_code TEXT,
   p_intake_year INT DEFAULT EXTRACT(YEAR FROM CURRENT_DATE)::INT
 )
-RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $func$
 DECLARE
   v_seq BIGINT;
   v_clean_code TEXT;
@@ -577,13 +619,13 @@ BEGIN
   v_clean_code := UPPER(REGEXP_REPLACE(COALESCE(p_program_code, 'GEN'), '[^A-Za-z0-9]', '', 'g'));
   RETURN format('LA-%s-%s-%s', p_intake_year, v_clean_code, LPAD(v_seq::TEXT, 4, '0'));
 END;
-$$;
+$func$;
 
 GRANT EXECUTE ON FUNCTION public.user_has_permission(UUID, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION public.generate_student_matricule(TEXT, INT) TO service_role;
 
 -- ---------------------------------------------------------------------------
--- 9. Row-Level Security (RLS)
+-- 9. Row-Level Security
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -621,15 +663,12 @@ ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Select policies
 DROP POLICY IF EXISTS profiles_select ON public.profiles;
-CREATE POLICY profiles_select ON public.profiles
-  FOR SELECT TO authenticated
+CREATE POLICY profiles_select ON public.profiles FOR SELECT TO authenticated
   USING (id = auth.uid() OR public.has_permission('students.read') OR public.has_role('super_admin'));
 
 DROP POLICY IF EXISTS profiles_update ON public.profiles;
-CREATE POLICY profiles_update ON public.profiles
-  FOR UPDATE TO authenticated
+CREATE POLICY profiles_update ON public.profiles FOR UPDATE TO authenticated
   USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 
 DROP POLICY IF EXISTS roles_select ON public.roles;
