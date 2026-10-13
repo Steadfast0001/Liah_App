@@ -127,17 +127,17 @@ INSERT INTO public.departments (id, code, name, is_active) VALUES
   ('11111111-1111-1111-1111-111111111101', 'CS',  'Computer Science & IT', TRUE),
   ('11111111-1111-1111-1111-111111111102', 'BA',  'Business Administration', TRUE),
   ('11111111-1111-1111-1111-111111111103', 'ENG', 'Software & Systems Engineering', TRUE)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.programs (id, department_id, code, name, duration_semesters, is_active) VALUES
   ('22222222-2222-2222-2222-222222222201', '11111111-1111-1111-1111-111111111101', 'BSC-CS',  'B.Sc. Computer Science', 6, TRUE),
   ('22222222-2222-2222-2222-222222222202', '11111111-1111-1111-1111-111111111102', 'BBA',     'Bachelor of Business Administration', 6, TRUE),
   ('22222222-2222-2222-2222-222222222203', '11111111-1111-1111-1111-111111111103', 'BENG-SE', 'B.Eng. Software Engineering', 8, TRUE)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.academic_years (id, label, starts_on, ends_on, is_current) VALUES
   ('33333333-3333-3333-3333-333333333301', '2026/2027', '2026-09-01', '2027-06-30', TRUE)
-ON CONFLICT (label) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.semesters (
   id, academic_year_id, term_number, label, starts_on, ends_on,
@@ -145,13 +145,13 @@ INSERT INTO public.semesters (
 ) VALUES
   ('44444444-4444-4444-4444-444444444401', '33333333-3333-3333-3333-333333333301', 1, 'First Semester 2026/2027', '2026-09-01', '2027-01-31', NOW() - INTERVAL '30 days', NOW() + INTERVAL '60 days', TRUE),
   ('44444444-4444-4444-4444-444444444402', '33333333-3333-3333-3333-333333333301', 2, 'Second Semester 2026/2027', '2027-02-01', '2027-06-30', NULL, NULL, FALSE)
-ON CONFLICT (academic_year_id, term_number) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.cohorts (id, program_id, intake_year, label) VALUES
   ('55555555-5555-5555-5555-555555555501', '22222222-2222-2222-2222-222222222201', 2026, 'BSC-CS 2026 Intake'),
   ('55555555-5555-5555-5555-555555555502', '22222222-2222-2222-2222-222222222202', 2026, 'BBA 2026 Intake'),
   ('55555555-5555-5555-5555-555555555503', '22222222-2222-2222-2222-222222222203', 2026, 'BENG-SE 2026 Intake')
-ON CONFLICT (program_id, intake_year) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.courses (id, department_id, code, title, credit_units, level, is_active) VALUES
   ('66666666-6666-6666-6666-666666666601', '11111111-1111-1111-1111-111111111101', 'CS101',   'Introduction to Programming', 4, 100, TRUE),
@@ -159,7 +159,7 @@ INSERT INTO public.courses (id, department_id, code, title, credit_units, level,
   ('66666666-6666-6666-6666-666666666603', '11111111-1111-1111-1111-111111111101', 'CS103',   'Database Management Systems', 3, 100, TRUE),
   ('66666666-6666-6666-6666-666666666604', '11111111-1111-1111-1111-111111111103', 'SE101',   'Software Engineering Principles', 3, 100, TRUE),
   ('66666666-6666-6666-6666-666666666605', '11111111-1111-1111-1111-111111111102', 'BA101',   'Principles of Management', 3, 100, TRUE)
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.course_offerings (id, course_id, semester_id, cohort_id, capacity, is_open_for_registration) VALUES
   ('77777777-7777-7777-7777-777777777701', '66666666-6666-6666-6666-666666666601', '44444444-4444-4444-4444-444444444401', NULL, 60, TRUE),
@@ -167,7 +167,7 @@ INSERT INTO public.course_offerings (id, course_id, semester_id, cohort_id, capa
   ('77777777-7777-7777-7777-777777777703', '66666666-6666-6666-6666-666666666603', '44444444-4444-4444-4444-444444444401', NULL, 50, TRUE),
   ('77777777-7777-7777-7777-777777777704', '66666666-6666-6666-6666-666666666604', '44444444-4444-4444-4444-444444444401', NULL, 50, TRUE),
   ('77777777-7777-7777-7777-777777777705', '66666666-6666-6666-6666-666666666605', '44444444-4444-4444-4444-444444444401', NULL, 80, TRUE)
-ON CONFLICT (course_id, semester_id, cohort_id) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- 4. Link info@liahacademy.com as Super Admin
 INSERT INTO public.profiles (id, email, full_name, is_active)
