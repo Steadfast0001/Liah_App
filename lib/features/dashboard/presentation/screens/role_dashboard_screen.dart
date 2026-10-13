@@ -16,6 +16,11 @@ import '../../../course_registration/presentation/screens/course_registration_sc
 import '../../../students/presentation/screens/create_student_screen.dart';
 import '../../../students/presentation/screens/student_list_screen.dart';
 
+/// Unified role-based dashboard supporting:
+/// - Student: Bottom Navigation (Home, Courses, Fees, Results, More)
+/// - Lecturer: Bottom Nav / Drawer (Home, My Courses, Attendance, Grades, More)
+/// - Admin: Drawer / Side Navigation (9 sections)
+/// - Super Admin: Drawer / Side Navigation (9 sections + 4 system management modules)
 class RoleDashboardScreen extends ConsumerStatefulWidget {
   const RoleDashboardScreen({super.key});
 
@@ -99,20 +104,26 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 1. STUDENT SHELL (Bottom Navigation: Home, Courses, Fees, Results, More)
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // 1. STUDENT SHELL
+  // Bottom Nav:
+  // 1. Home (Dashboard)
+  // 2. Courses
+  // 3. Fees
+  // 4. Results
+  // 5. More (Profile, Documents, Notifications, Transcripts)
+  // ===========================================================================
   Widget _buildStudentShell(
     BuildContext context,
     UserProfile? profile,
     AppRole activeRole,
   ) {
     const titles = [
-      'Student Dashboard',
+      'Student Home',
       'Course Registration',
       'Fees & Payments',
       'Academic Results',
-      'More',
+      'More Services',
     ];
     final safeIndex = _selectedIndex.clamp(0, titles.length - 1);
 
@@ -125,16 +136,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           const CourseRegistrationScreen(embedded: true),
           _buildStudentFeesTab(context),
           _buildStudentResultsTab(context),
-          _buildMoreTab(
-            context,
-            profile,
-            activeRole,
-            extraItems: const [
-              ('Documents', 'Admission letter, receipts, uploads', Icons.folder_outlined),
-              ('Transcripts', 'Request official full or partial transcript', Icons.verified_outlined),
-              ('Notifications', 'Academic & financial alerts', Icons.notifications_outlined),
-            ],
-          ),
+          _buildStudentMoreTab(context, profile, activeRole),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -186,8 +188,8 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         ),
         const SizedBox(height: 16),
         const SectionHeader(
-          title: 'Semester Summary',
-          subtitle: 'First Semester 2026/2027',
+          title: 'Current Semester Overview',
+          subtitle: 'First Semester 2026/2027 • B.Sc. Computer Science',
         ),
         Row(
           children: [
@@ -214,7 +216,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Add or drop semester offerings',
+                      'Add or drop offerings (15-24 credits)',
                       style: TextStyle(color: AppColors.muted, fontSize: 12),
                     ),
                   ],
@@ -240,7 +242,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'Fee Status',
+                      'Fee Balance',
                       style: TextStyle(
                         color: AppColors.onNavy,
                         fontWeight: FontWeight.bold,
@@ -251,7 +253,6 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                       0,
                       style: TextStyle(
                         color: AppColors.gold,
-                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -263,34 +264,46 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         ),
         const SizedBox(height: 16),
         const SectionHeader(
-          title: 'Recent Announcements',
-          subtitle: 'Official notices from Liah Academy',
+          title: 'Academic Quick Access',
+          subtitle: 'Published results and official records',
         ),
-        const AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.campaign_outlined, color: AppColors.gold),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'First Semester 2026/2027 Registration Open',
-                      style: TextStyle(
-                        color: AppColors.onNavy,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+        AppCard(
+          onTap: () => setState(() => _selectedIndex = 3),
+          child: const ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.grade_outlined, color: AppColors.gold),
+            title: Text(
+              'View Semester Grades & GPA',
+              style: TextStyle(
+                color: AppColors.onNavy,
+                fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: 6),
-              Text(
-                'Students may now register for First Semester courses under the Courses tab.',
-                style: TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
+            subtitle: Text(
+              'Official published results for completed semesters',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          onTap: () => setState(() => _selectedIndex = 4),
+          child: const ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.verified_outlined, color: AppColors.gold),
+            title: Text(
+              'Transcripts & Documents',
+              style: TextStyle(
+                color: AppColors.onNavy,
+                fontWeight: FontWeight.bold,
               ),
-            ],
+            ),
+            subtitle: Text(
+              'Request official transcripts and download admission papers',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
           ),
         ),
       ],
@@ -310,7 +323,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Outstanding Balance',
+                    'Outstanding Tuition & Charges',
                     style: TextStyle(color: AppColors.muted, fontSize: 13),
                   ),
                   StatusChip(status: 'CLEARED'),
@@ -321,19 +334,19 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                 0,
                 style: TextStyle(
                   color: AppColors.gold,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 14),
               AppButton(
-                label: 'Pay with MTN MoMo / Orange Money',
+                label: 'Pay via Mobile Money (MTN MoMo / Orange Money)',
                 icon: Icons.payments_outlined,
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'Mobile Money payment intent flows through create-payment-intent Edge Function.',
+                        'Mobile Money checkout creates payment intent via create-payment-intent Edge Function.',
                       ),
                     ),
                   );
@@ -345,7 +358,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         const SizedBox(height: 16),
         const SectionHeader(
           title: 'Semester Fee Schedule',
-          subtitle: 'Amounts in Central African CFA (XAF)',
+          subtitle: 'All fees charged in Central African CFA (XAF)',
         ),
         const AppCard(
           child: Row(
@@ -355,7 +368,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Semester Tuition',
+                    'Tuition Fee',
                     style: TextStyle(
                       color: AppColors.onNavy,
                       fontWeight: FontWeight.bold,
@@ -378,6 +391,38 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 10),
+        const AppCard(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Registration Fee',
+                    style: TextStyle(
+                      color: AppColors.onNavy,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Annual Registration & ICT',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
+              AmountText(
+                25000,
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -387,8 +432,8 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
       padding: const EdgeInsets.all(16),
       children: const [
         SectionHeader(
-          title: 'Published Results',
-          subtitle: 'Only results with workflow_status = published are shown',
+          title: 'Official Published Results',
+          subtitle: 'Enforced by Row Level Security (workflow_status = published)',
         ),
         AppCard(
           child: Column(
@@ -402,15 +447,36 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                     style: TextStyle(
                       color: AppColors.onNavy,
                       fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  StatusChip(status: 'PENDING'),
+                  StatusChip(status: 'IN PROGRESS'),
                 ],
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 10),
               Text(
-                'Results will appear here once finalized and published by the Academic Board.',
+                'Continuous Assessment (CA) and Final Exam scores are being graded by course lecturers.',
                 style: TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+              SizedBox(height: 12),
+              Divider(color: AppColors.border),
+              SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Current Cumulative GPA:',
+                    style: TextStyle(color: AppColors.muted, fontSize: 13),
+                  ),
+                  Text(
+                    '3.82 / 4.00',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -419,25 +485,207 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. LECTURER SHELL (Bottom Navigation: Home, My Courses, Attendance, Grades, More)
-  // ---------------------------------------------------------------------------
+  Widget _buildStudentMoreTab(
+    BuildContext context,
+    UserProfile? profile,
+    AppRole activeRole,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _ProfileRoleBanner(
+          profile: profile,
+          activeRole: activeRole,
+          onRoleChanged: _selectRole,
+        ),
+        const SizedBox(height: 16),
+        const SectionHeader(
+          title: 'Student Services',
+          subtitle: 'Profile, Documents, Notifications & Transcripts',
+        ),
+        AppCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.badge_outlined, color: AppColors.gold),
+            title: const Text(
+              'Student Profile',
+              style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              'Matricule: LA-2026-BSC-CS-0001 • ${profile?.email ?? ""}',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.folder_outlined, color: AppColors.gold),
+            title: const Text(
+              'Documents',
+              style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text(
+              'Admission letter, registration receipts, identity scans',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.notifications_outlined, color: AppColors.gold),
+            title: const Text(
+              'Notifications',
+              style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text(
+              'Academic alerts, fee deadlines, registration notices',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: const StatusChip(status: '2 NEW'),
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.verified_outlined, color: AppColors.gold),
+            title: const Text(
+              'Transcripts',
+              style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text(
+              'Generate & download official partial or full transcript PDF',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Transcripts invoke generate-transcript Edge Function.'),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+        AppButton(
+          label: 'Sign Out',
+          icon: Icons.logout,
+          variant: AppButtonVariant.secondary,
+          fullWidth: true,
+          onPressed: () async {
+            await ref.read(authRepositoryProvider).signOut();
+            if (context.mounted) context.go(LoginScreen.routePath);
+          },
+        ),
+      ],
+    );
+  }
+
+  // ===========================================================================
+  // 2. LECTURER SHELL
+  // Bottom Nav / Drawer:
+  // 1. Home
+  // 2. My Courses
+  // 3. Attendance
+  // 4. Grades
+  // 5. More
+  // ===========================================================================
   Widget _buildLecturerShell(
     BuildContext context,
     UserProfile? profile,
     AppRole activeRole,
   ) {
     const titles = [
-      'Lecturer Dashboard',
-      'My Courses & Roster',
-      'Attendance',
+      'Lecturer Home',
+      'My Courses & Class Roster',
+      'Attendance Tracking',
       'Assessment & Grades',
-      'More',
+      'More Services',
     ];
     final safeIndex = _selectedIndex.clamp(0, titles.length - 1);
 
+    const lecturerNavItems = [
+      ('Home', Icons.home_outlined, Icons.home),
+      ('My Courses', Icons.class_outlined, Icons.class_),
+      ('Attendance', Icons.fact_check_outlined, Icons.fact_check),
+      ('Grades', Icons.grading_outlined, Icons.grading),
+      ('More', Icons.more_horiz_outlined, Icons.more_horiz),
+    ];
+
     return Scaffold(
       appBar: _buildAppBar(context, titles[safeIndex], activeRole),
+      drawer: Drawer(
+        backgroundColor: AppColors.navyDeep,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.school_outlined, color: AppColors.gold, size: 28),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Liah Academy SMS',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.onNavy,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const StatusChip(status: 'LECTURER'),
+                  ],
+                ),
+              ),
+              const Divider(color: AppColors.border, height: 1),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: lecturerNavItems.length,
+                  itemBuilder: (context, index) {
+                    final item = lecturerNavItems[index];
+                    final selected = index == safeIndex;
+                    return ListTile(
+                      selected: selected,
+                      selectedTileColor: AppColors.surfaceRaised,
+                      leading: Icon(
+                        selected ? item.$3 : item.$2,
+                        color: selected ? AppColors.gold : AppColors.muted,
+                      ),
+                      title: Text(
+                        item.$1,
+                        style: TextStyle(
+                          color: selected ? AppColors.gold : AppColors.onNavy,
+                          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() => _selectedIndex = index);
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: IndexedStack(
         index: safeIndex,
         children: [
@@ -452,7 +700,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               const SizedBox(height: 16),
               const SectionHeader(
                 title: 'Lecturer Quick Actions',
-                subtitle: 'Manage assigned offerings, attendance, and grades',
+                subtitle: 'Manage assigned course offerings, attendance, and grades',
               ),
               AppCard(
                 onTap: () => setState(() => _selectedIndex = 1),
@@ -467,14 +715,30 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'View enrolled students per course offering',
-                    style: TextStyle(color: AppColors.muted),
+                    'CS101 (Intro to Programming), CS102 (Data Structures)',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
                   ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: AppColors.muted,
+                  trailing: Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
+                ),
+              ),
+              const SizedBox(height: 10),
+              AppCard(
+                onTap: () => setState(() => _selectedIndex = 2),
+                child: const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.fact_check_outlined, color: AppColors.gold),
+                  title: Text(
+                    'Take Attendance',
+                    style: TextStyle(
+                      color: AppColors.onNavy,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  subtitle: Text(
+                    'Record student attendance session for today',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
                 ),
               ),
               const SizedBox(height: 10),
@@ -482,23 +746,19 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                 onTap: () => setState(() => _selectedIndex = 3),
                 child: const ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.rule_folder_outlined, color: AppColors.gold),
+                  leading: Icon(Icons.grading_outlined, color: AppColors.gold),
                   title: Text(
-                    'Enter CA / Exam Scores & Submit Grades',
+                    'Grade Entry & Submit Results',
                     style: TextStyle(
                       color: AppColors.onNavy,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   subtitle: Text(
-                    'Submit course grades for Admin approval',
-                    style: TextStyle(color: AppColors.muted),
+                    'Continuous Assessment (30%) + Final Exam (70%)',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
                   ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: AppColors.muted,
-                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.muted),
                 ),
               ),
             ],
@@ -506,18 +766,17 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           const CourseRegistrationScreen(embedded: true),
           _buildFeatureModulePlaceholder(
             title: 'Attendance Sessions',
-            subtitle: 'Mark and review class attendance for assigned offerings.',
+            subtitle: 'Take and verify attendance per lecture for enrolled students.',
             icon: Icons.fact_check_outlined,
             status: 'ACTIVE',
           ),
           _buildFeatureModulePlaceholder(
             title: 'Assessment Config & Grade Entry',
-            subtitle:
-                'Configure CA/Exam weights, enter student scores, and invoke submit-course-grades.',
+            subtitle: 'Configure CA/Exam weight distribution and submit grades for approval.',
             icon: Icons.grading_outlined,
             status: 'DRAFT',
           ),
-          _buildMoreTab(context, profile, activeRole),
+          _buildStudentMoreTab(context, profile, activeRole),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -546,6 +805,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           ),
           NavigationDestination(
             icon: Icon(Icons.more_horiz),
+            selectedIcon: Icon(Icons.more_horiz),
             label: 'More',
           ),
         ],
@@ -553,9 +813,26 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. ADMIN & SUPER ADMIN SHELL (Drawer / Side Navigation)
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // 3. ADMIN & SUPER ADMIN SHELL
+  // Drawer / Side Navigation:
+  // Admin:
+  // 1. Dashboard
+  // 2. Admissions
+  // 3. Students
+  // 4. Staff
+  // 5. Academics
+  // 6. Finance
+  // 7. Results
+  // 8. Reports
+  // 9. Settings
+  // Super Admin:
+  // Same as Admin + extra:
+  // - Roles & Permissions
+  // - System Configuration
+  // - Audit Logs
+  // - Fee & Credit Configuration
+  // ===========================================================================
   Widget _buildAdminShell(
     BuildContext context,
     UserProfile? profile,
@@ -598,7 +875,111 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
 
     final safeIndex = _selectedIndex.clamp(0, items.length - 1);
     final selectedItem = items[safeIndex];
+    final isWideScreen = MediaQuery.sizeOf(context).width >= 900;
 
+    Widget navList({required bool inDrawer}) {
+      return ListView.builder(
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final nav = items[index];
+          final selected = index == safeIndex;
+          return ListTile(
+            selected: selected,
+            selectedTileColor: AppColors.surfaceRaised,
+            leading: Icon(
+              nav.icon,
+              color: selected ? AppColors.gold : AppColors.muted,
+            ),
+            title: Text(
+              nav.label,
+              style: TextStyle(
+                color: selected ? AppColors.gold : AppColors.onNavy,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            trailing: nav.superAdminOnly
+                ? const Icon(
+                    Icons.shield_outlined,
+                    size: 15,
+                    color: AppColors.gold,
+                  )
+                : null,
+            onTap: () {
+              setState(() => _selectedIndex = index);
+              if (inDrawer) Navigator.of(context).pop();
+            },
+          );
+        },
+      );
+    }
+
+    Widget drawerHeader() {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.school_outlined,
+                  color: AppColors.gold,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Liah Academy SMS',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.onNavy,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            StatusChip(status: activeRole.label),
+          ],
+        ),
+      );
+    }
+
+    if (isWideScreen) {
+      // Side Navigation (Desktop & Wide Tablet)
+      return Scaffold(
+        appBar: _buildAppBar(context, selectedItem.label, activeRole),
+        body: Row(
+          children: [
+            Container(
+              width: 260,
+              decoration: const BoxDecoration(
+                color: AppColors.navyDeep,
+                border: Border(right: BorderSide(color: AppColors.border)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  drawerHeader(),
+                  const Divider(color: AppColors.border, height: 1),
+                  Expanded(child: navList(inDrawer: false)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _buildAdminContent(
+                context,
+                profile,
+                activeRole,
+                selectedItem.label,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Drawer (Mobile & Compact screens)
     return Scaffold(
       appBar: _buildAppBar(context, selectedItem.label, activeRole),
       drawer: Drawer(
@@ -607,80 +988,19 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.school_outlined,
-                          color: AppColors.gold,
-                          size: 28,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Liah Academy SMS',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: AppColors.onNavy,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    StatusChip(status: activeRole.label),
-                  ],
-                ),
-              ),
+              drawerHeader(),
               const Divider(color: AppColors.border, height: 1),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final nav = items[index];
-                    final selected = index == safeIndex;
-                    return ListTile(
-                      selected: selected,
-                      selectedTileColor: AppColors.surfaceRaised,
-                      leading: Icon(
-                        nav.icon,
-                        color: selected ? AppColors.gold : AppColors.muted,
-                      ),
-                      title: Text(
-                        nav.label,
-                        style: TextStyle(
-                          color: selected ? AppColors.gold : AppColors.onNavy,
-                          fontWeight:
-                              selected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      trailing: nav.superAdminOnly
-                          ? const Icon(
-                              Icons.shield_outlined,
-                              size: 15,
-                              color: AppColors.gold,
-                            )
-                          : null,
-                      onTap: () {
-                        setState(() => _selectedIndex = index);
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
-                ),
-              ),
+              Expanded(child: navList(inDrawer: true)),
             ],
           ),
         ),
       ),
-      body: _buildAdminContent(context, profile, activeRole, selectedItem.label),
+      body: _buildAdminContent(
+        context,
+        profile,
+        activeRole,
+        selectedItem.label,
+      ),
     );
   }
 
@@ -702,7 +1022,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
             const SizedBox(height: 16),
             SectionHeader(
               title: '${activeRole.label} Workspace',
-              subtitle: 'Core administration & academic operations',
+              subtitle: 'Core administration & school operations',
             ),
             GridView.count(
               crossAxisCount: MediaQuery.sizeOf(context).width > 700 ? 3 : 2,
@@ -713,97 +1033,109 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               childAspectRatio: 1.35,
               children: [
                 _AdminQuickTile(
+                  icon: Icons.how_to_reg_outlined,
+                  title: 'Admissions',
+                  subtitle: 'Applicant processing',
+                  onTap: () => setState(() => _selectedIndex = 1),
+                ),
+                _AdminQuickTile(
                   icon: Icons.people_alt_outlined,
                   title: 'Students',
-                  subtitle: 'Directory & matricules',
+                  subtitle: 'Student roster & profiles',
                   onTap: () => setState(() => _selectedIndex = 2),
                 ),
                 _AdminQuickTile(
                   icon: Icons.person_add_alt_1_outlined,
                   title: 'Create Student',
-                  subtitle: 'Edge Function enrollment',
+                  subtitle: 'Matricule auto-generation',
                   onTap: () => context.push(CreateStudentScreen.routePath),
                 ),
                 _AdminQuickTile(
                   icon: Icons.school_outlined,
                   title: 'Academics',
-                  subtitle: 'Offerings & registration',
+                  subtitle: 'Courses & offerings',
                   onTap: () => setState(() => _selectedIndex = 4),
                 ),
                 _AdminQuickTile(
                   icon: Icons.payments_outlined,
                   title: 'Finance',
-                  subtitle: 'Fee rules & payments',
+                  subtitle: 'Tuition & payment reconciliation',
                   onTap: () => setState(() => _selectedIndex = 5),
+                ),
+                _AdminQuickTile(
+                  icon: Icons.assignment_turned_in_outlined,
+                  title: 'Results',
+                  subtitle: 'Exam Board workflow',
+                  onTap: () => setState(() => _selectedIndex = 6),
                 ),
               ],
             ),
           ],
         ),
+      'Admissions' => _buildFeatureModulePlaceholder(
+          title: 'Admissions Management',
+          subtitle: 'Review student applications, approve admissions, and issue matricules.',
+          icon: Icons.how_to_reg_outlined,
+          status: 'ACTIVE',
+        ),
       'Students' => const StudentListScreen(embedded: true),
+      'Staff' => _buildFeatureModulePlaceholder(
+          title: 'Staff Directory',
+          subtitle: 'Faculty lecturers, department heads, and academic advisors.',
+          icon: Icons.badge_outlined,
+          status: 'ACTIVE',
+        ),
       'Academics' => const CourseRegistrationScreen(embedded: true),
-      'Settings' => _buildMoreTab(context, profile, activeRole),
+      'Finance' => _buildFeatureModulePlaceholder(
+          title: 'Finance & Tuition Revenue',
+          subtitle: 'Student charges, fee categories, and MTN MoMo / Orange Money reconciliation.',
+          icon: Icons.payments_outlined,
+          status: 'ACTIVE',
+        ),
+      'Results' => _buildFeatureModulePlaceholder(
+          title: 'Examination Board & Result Approval',
+          subtitle: 'Draft ➔ Submitted ➔ Approved ➔ Finalized ➔ Published pipeline.',
+          icon: Icons.assignment_turned_in_outlined,
+          status: 'ACTIVE',
+        ),
+      'Reports' => _buildFeatureModulePlaceholder(
+          title: 'Reports & Analytics',
+          subtitle: 'Enrollment statistics, fee collection rates, and academic performance.',
+          icon: Icons.bar_chart_outlined,
+          status: 'ACTIVE',
+        ),
+      'Settings' => _buildStudentMoreTab(context, profile, activeRole),
+      'Roles & Permissions' => _buildFeatureModulePlaceholder(
+          title: 'Roles & Permissions Matrix',
+          subtitle: 'Manage RBAC permissions for Super Admin, Admin, Lecturer, and Student.',
+          icon: Icons.admin_panel_settings_outlined,
+          status: 'SUPER ADMIN',
+        ),
+      'System Configuration' => _buildFeatureModulePlaceholder(
+          title: 'System Configuration',
+          subtitle: 'Configure academic years, semester registration windows, and integrations.',
+          icon: Icons.tune_outlined,
+          status: 'SUPER ADMIN',
+        ),
+      'Audit Logs' => _buildFeatureModulePlaceholder(
+          title: 'Security Audit Logs',
+          subtitle: 'Immutable record of security events, grade approvals, and user modifications.',
+          icon: Icons.history_edu_outlined,
+          status: 'SUPER ADMIN',
+        ),
+      'Fee & Credit Config' => _buildFeatureModulePlaceholder(
+          title: 'Fee & Credit Bounds Configuration',
+          subtitle: 'Set semester credit limits (15-24 credits) and program tuition structures.',
+          icon: Icons.request_quote_outlined,
+          status: 'SUPER ADMIN',
+        ),
       _ => _buildFeatureModulePlaceholder(
           title: sectionLabel,
-          subtitle:
-              '$sectionLabel module connected to Supabase RLS and Edge Functions.',
+          subtitle: '$sectionLabel module connected to Supabase RLS and Edge Functions.',
           icon: Icons.layers_outlined,
           status: 'ACTIVE',
         ),
     };
-  }
-
-  Widget _buildMoreTab(
-    BuildContext context,
-    UserProfile? profile,
-    AppRole activeRole, {
-    List<(String, String, IconData)> extraItems = const [],
-  }) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _ProfileRoleBanner(
-          profile: profile,
-          activeRole: activeRole,
-          onRoleChanged: _selectRole,
-        ),
-        const SizedBox(height: 16),
-        if (extraItems.isNotEmpty) ...[
-          const SectionHeader(title: 'Services & Records'),
-          for (final item in extraItems) ...[
-            AppCard(
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(item.$3, color: AppColors.gold),
-                title: Text(
-                  item.$1,
-                  style: const TextStyle(
-                    color: AppColors.onNavy,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  item.$2,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        ],
-        const SectionHeader(title: 'Account & Security'),
-        AppButton(
-          label: 'Sign Out',
-          icon: Icons.logout,
-          variant: AppButtonVariant.secondary,
-          fullWidth: true,
-          onPressed: () async {
-            await ref.read(authRepositoryProvider).signOut();
-            if (context.mounted) context.go(LoginScreen.routePath);
-          },
-        ),
-      ],
-    );
   }
 
   Widget _buildFeatureModulePlaceholder({
