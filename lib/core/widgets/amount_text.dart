@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../formatting/xaf_format.dart';
+import '../utils/xaf_format.dart';
 
 class AmountText extends StatelessWidget {
   const AmountText(

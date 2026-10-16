@@ -9,10 +9,10 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/section_header.dart';
 import '../../../../core/widgets/status_chip.dart';
-import '../../../authentication/domain/entities/user_profile.dart';
-import '../../../authentication/presentation/providers/auth_providers.dart';
-import '../../../authentication/presentation/screens/login_screen.dart';
-import '../../../course_registration/presentation/screens/course_registration_screen.dart';
+import '../../../auth/domain/entities/user_profile.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
+import '../../../registration/presentation/screens/course_registration_screen.dart';
 import '../../../students/presentation/screens/create_student_screen.dart';
 import '../../../students/presentation/screens/student_list_screen.dart';
 

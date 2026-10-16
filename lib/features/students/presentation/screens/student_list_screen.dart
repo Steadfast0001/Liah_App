@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/formatting/date_format.dart';
+import '../../../../core/utils/date_format.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/error_state.dart';
 import '../../../../core/widgets/matricule_badge.dart';
 import '../../../../core/widgets/status_chip.dart';
-import '../../../authentication/presentation/providers/auth_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/student_providers.dart';
 import 'create_student_screen.dart';
 
