@@ -129,18 +129,46 @@ class StudentRepositoryImpl implements StudentRepository {
     String? phone,
     String? password,
   }) async {
-    final data = await _edgeClient.invoke(
-      EdgeFunctions.adminCreateStudent,
-      body: {
-        'email': email.trim(),
-        'full_name': fullName.trim(),
-        'program_id': programId,
-        if (cohortId != null && cohortId.isNotEmpty) 'cohort_id': cohortId,
-        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
-        if (password != null && password.trim().isNotEmpty)
-          'password': password.trim(),
-      },
-    );
+    Map<String, dynamic> data;
+    try {
+      data = await _edgeClient.invoke(
+        EdgeFunctions.adminCreateStudent,
+        body: {
+          'email': email.trim(),
+          'full_name': fullName.trim(),
+          'program_id': programId,
+          if (cohortId != null && cohortId.isNotEmpty) 'cohort_id': cohortId,
+          if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+          if (password != null && password.trim().isNotEmpty)
+            'password': password.trim(),
+        },
+      );
+    } catch (_) {
+      try {
+        final rpcRes = await _client.rpc(
+          'admin_create_student',
+          params: {
+            'p_email': email.trim(),
+            'p_full_name': fullName.trim(),
+            'p_program_id': programId,
+            'p_cohort_id': (cohortId != null && cohortId.isNotEmpty) ? cohortId : null,
+            'p_phone': (phone != null && phone.trim().isNotEmpty) ? phone.trim() : null,
+            'p_password': (password != null && password.trim().isNotEmpty) ? password.trim() : null,
+          },
+        );
+        if (rpcRes is Map<String, dynamic>) {
+          data = rpcRes;
+        } else if (rpcRes is Map) {
+          data = Map<String, dynamic>.from(rpcRes);
+        } else {
+          throw const NetworkException('Failed to process student creation.');
+        }
+      } on PostgrestException catch (e) {
+        throw NetworkException(e.message);
+      } catch (e) {
+        throw NetworkException(e.toString());
+      }
+    }
 
     return CreatedStudentResult(
       studentId: (data['student_id'] as String?) ?? '',
