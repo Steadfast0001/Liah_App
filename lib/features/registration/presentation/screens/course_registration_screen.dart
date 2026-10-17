@@ -124,7 +124,8 @@ class _CourseRegistrationScreenState
                 padding: const EdgeInsets.all(16),
                 children: [
                   AppCard(
-                    backgroundColor: AppColors.navyDeep,
+                    backgroundColor: AppColors.primary,
+                    borderColor: AppColors.primaryLight,
                     padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,14 +134,14 @@ class _CourseRegistrationScreenState
                           children: [
                             const Icon(
                               Icons.calendar_month_outlined,
-                              color: AppColors.gold,
+                              color: Colors.white,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 semester.label,
                                 style: const TextStyle(
-                                  color: AppColors.onNavy,
+                                  color: Colors.white,
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -173,14 +174,14 @@ class _CourseRegistrationScreenState
                                   const Icon(
                                     Icons.info_outline,
                                     size: 16,
-                                    color: AppColors.gold,
+                                    color: Colors.white70,
                                   ),
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       msg,
                                       style: const TextStyle(
-                                        color: AppColors.muted,
+                                        color: Colors.white70,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -226,17 +227,17 @@ class _CourseRegistrationScreenState
                                           vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: AppColors.goldTint,
+                                          color: AppColors.primaryContainer,
                                           borderRadius:
                                               BorderRadius.circular(6),
                                           border: Border.all(
-                                            color: AppColors.gold,
+                                            color: AppColors.primaryLight,
                                           ),
                                         ),
                                         child: Text(
                                           item.courseCode,
                                           style: const TextStyle(
-                                            color: AppColors.gold,
+                                            color: AppColors.primary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
@@ -245,7 +246,7 @@ class _CourseRegistrationScreenState
                                       Text(
                                         '${item.creditUnits} Credits',
                                         style: const TextStyle(
-                                          color: AppColors.muted,
+                                          color: AppColors.textSecondary,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -253,7 +254,7 @@ class _CourseRegistrationScreenState
                                         Text(
                                           '• Level ${item.level}',
                                           style: const TextStyle(
-                                            color: AppColors.muted,
+                                            color: AppColors.textSecondary,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -267,7 +268,7 @@ class _CourseRegistrationScreenState
                                   Text(
                                     item.courseTitle,
                                     style: const TextStyle(
-                                      color: AppColors.onNavy,
+                                      color: AppColors.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -282,15 +283,15 @@ class _CourseRegistrationScreenState
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: AppColors.gold,
+                                      color: AppColors.primary,
                                     ),
                                   )
                                 : item.isRegistered
                                     ? OutlinedButton(
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.onNavy,
+                                          foregroundColor: AppColors.error,
                                           side: const BorderSide(
-                                            color: AppColors.muted,
+                                            color: AppColors.error,
                                           ),
                                         ),
                                         onPressed: canRegister
@@ -363,22 +364,22 @@ class _StatBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: AppColors.primaryContainer,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.primaryLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 11),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
           ),
           const SizedBox(height: 2),
           Text(
             value,
             style: const TextStyle(
-              color: AppColors.gold,
+              color: AppColors.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),

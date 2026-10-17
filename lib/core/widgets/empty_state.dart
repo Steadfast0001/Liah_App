@@ -27,14 +27,14 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: AppColors.border),
+            Icon(icon, size: 56, color: AppColors.textSecondary),
             const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.navy,
+                    color: AppColors.textPrimary,
                   ),
             ),
             if (subtitle != null) ...[
@@ -42,7 +42,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.border, fontSize: 13),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
             if (actionLabel != null && onAction != null) ...[

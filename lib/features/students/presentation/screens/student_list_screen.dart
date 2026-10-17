@@ -155,8 +155,8 @@ class StudentListScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         floatingActionButton: canCreate
             ? FloatingActionButton.extended(
-                backgroundColor: AppColors.gold,
-                foregroundColor: AppColors.navyDeep,
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 onPressed: () => context.push(CreateStudentScreen.routePath),
                 icon: const Icon(Icons.person_add_alt_1),
                 label: const Text('Create Student'),
@@ -179,8 +179,8 @@ class StudentListScreen extends ConsumerWidget {
       ),
       floatingActionButton: canCreate
           ? FloatingActionButton.extended(
-              backgroundColor: AppColors.gold,
-              foregroundColor: AppColors.navyDeep,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               onPressed: () => context.push(CreateStudentScreen.routePath),
               icon: const Icon(Icons.person_add_alt_1),
               label: const Text('Create Student'),
@@ -205,19 +205,19 @@ class _MetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: AppColors.primaryContainer,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.muted),
+          Icon(icon, size: 14, color: AppColors.textSecondary),
           const SizedBox(width: 4),
           Text(
             text,
             style: const TextStyle(
-              color: AppColors.onNavy,
+              color: AppColors.textPrimary,
               fontSize: 12,
             ),
           ),

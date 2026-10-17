@@ -50,21 +50,21 @@ class StatusChip extends StatelessWidget {
     final Color border;
 
     if (isPositive) {
-      bg = AppColors.successBackground;
-      fg = AppColors.successText;
-      border = AppColors.successText;
+      bg = AppColors.secondaryContainer;
+      fg = AppColors.secondary;
+      border = AppColors.secondary;
     } else if (isWarning) {
-      bg = AppColors.goldTint;
-      fg = AppColors.gold;
-      border = AppColors.gold;
+      bg = AppColors.warningContainer;
+      fg = AppColors.warning;
+      border = AppColors.warning;
     } else if (isDanger) {
-      bg = const Color(0xFFFDE8E8);
-      fg = const Color(0xFF9B1C1C);
-      border = const Color(0xFFF8B4B4);
+      bg = AppColors.errorContainer;
+      fg = AppColors.error;
+      border = AppColors.error;
     } else {
-      bg = AppColors.surfaceRaised;
-      fg = AppColors.onNavy;
-      border = AppColors.border;
+      bg = AppColors.primaryContainer;
+      fg = AppColors.primary;
+      border = AppColors.primaryLight;
     }
 
     return Container(

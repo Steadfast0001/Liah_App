@@ -29,7 +29,7 @@ class SectionHeader extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.navy,
+                        color: AppColors.textPrimary,
                       ),
                 ),
                 if (subtitle != null) ...[
@@ -37,7 +37,7 @@ class SectionHeader extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: const TextStyle(
-                      color: AppColors.border,
+                      color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),

@@ -6,39 +6,51 @@ abstract final class AppTheme {
   static ThemeData get light {
     const scheme = ColorScheme(
       brightness: Brightness.light,
-      primary: AppColors.gold,
-      onPrimary: AppColors.navyDeep,
-      primaryContainer: AppColors.goldTint,
-      onPrimaryContainer: AppColors.navy,
-      secondary: AppColors.surfaceRaised,
-      onSecondary: AppColors.onNavy,
-      secondaryContainer: AppColors.surface,
-      onSecondaryContainer: AppColors.onNavy,
-      tertiary: AppColors.muted,
-      onTertiary: AppColors.navyDeep,
-      error: Color(0xFFBA1A1A),
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.primaryContainer,
+      onPrimaryContainer: AppColors.primary,
+      secondary: AppColors.secondary,
+      onSecondary: Colors.white,
+      secondaryContainer: AppColors.secondaryContainer,
+      onSecondaryContainer: AppColors.secondary,
+      tertiary: AppColors.accent,
+      onTertiary: Colors.white,
+      tertiaryContainer: AppColors.accentContainer,
+      onTertiaryContainer: AppColors.accent,
+      error: AppColors.error,
       onError: Colors.white,
-      surface: AppColors.onNavy,
-      onSurface: AppColors.navy,
-      onSurfaceVariant: AppColors.muted,
+      errorContainer: AppColors.errorContainer,
+      onErrorContainer: AppColors.error,
+      surface: AppColors.surface,
+      onSurface: AppColors.textPrimary,
+      onSurfaceVariant: AppColors.textSecondary,
       outline: AppColors.border,
-      shadow: Colors.black26,
+      outlineVariant: AppColors.borderDark,
+      shadow: Colors.black12,
       scrim: Colors.black54,
-      inverseSurface: AppColors.navy,
-      onInverseSurface: AppColors.onNavy,
-      inversePrimary: AppColors.gold,
-      surfaceTint: AppColors.gold,
+      inverseSurface: AppColors.textPrimary,
+      onInverseSurface: AppColors.surface,
+      inversePrimary: AppColors.primaryLight,
+      surfaceTint: AppColors.primary,
     );
 
     return ThemeData(
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.onNavy,
+      scaffoldBackgroundColor: AppColors.background,
       useMaterial3: true,
       appBarTheme: const AppBarTheme(
         centerTitle: true,
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.onNavy,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+        actionsIconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
@@ -50,13 +62,39 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.navyDeep,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primaryLight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.border),
@@ -67,9 +105,51 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.gold, width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        labelStyle: const TextStyle(color: AppColors.muted),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
+        ),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: const TextStyle(color: AppColors.textSecondary),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        indicatorColor: AppColors.primaryContainer,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary);
+          }
+          return const IconThemeData(color: AppColors.textSecondary);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            );
+          }
+          return const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+          );
+        }),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: AppColors.surface,
       ),
       dividerColor: AppColors.border,
     );

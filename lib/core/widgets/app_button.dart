@@ -46,8 +46,8 @@ class AppButton extends StatelessWidget {
     final button = switch (variant) {
       AppButtonVariant.primary => FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.gold,
-            foregroundColor: AppColors.navyDeep,
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
           onPressed: effectiveOnPressed,
@@ -55,8 +55,8 @@ class AppButton extends StatelessWidget {
         ),
       AppButtonVariant.secondary => FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.surfaceRaised,
-            foregroundColor: AppColors.onNavy,
+            backgroundColor: AppColors.primaryContainer,
+            foregroundColor: AppColors.primary,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
           onPressed: effectiveOnPressed,
@@ -64,8 +64,8 @@ class AppButton extends StatelessWidget {
         ),
       AppButtonVariant.outlined => OutlinedButton(
           style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.navy,
-            side: const BorderSide(color: AppColors.border),
+            foregroundColor: AppColors.primary,
+            side: const BorderSide(color: AppColors.primaryLight),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
           onPressed: effectiveOnPressed,
@@ -73,7 +73,7 @@ class AppButton extends StatelessWidget {
         ),
       AppButtonVariant.danger => FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.error,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),

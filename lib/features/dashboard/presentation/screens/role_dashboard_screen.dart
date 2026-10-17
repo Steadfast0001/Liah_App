@@ -625,7 +625,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     return Scaffold(
       appBar: _buildAppBar(context, titles[safeIndex], activeRole),
       drawer: Drawer(
-        backgroundColor: AppColors.navyDeep,
+        backgroundColor: AppColors.surface,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -637,12 +637,12 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.school_outlined, color: AppColors.gold, size: 28),
+                        const Icon(Icons.school_outlined, color: AppColors.primary, size: 28),
                         const SizedBox(width: 10),
                         Text(
                           'Liah Academy SMS',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: AppColors.onNavy,
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
@@ -662,15 +662,15 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                     final selected = index == safeIndex;
                     return ListTile(
                       selected: selected,
-                      selectedTileColor: AppColors.surfaceRaised,
+                      selectedTileColor: AppColors.primaryContainer,
                       leading: Icon(
                         selected ? item.$3 : item.$2,
-                        color: selected ? AppColors.gold : AppColors.muted,
+                        color: selected ? AppColors.primary : AppColors.textSecondary,
                       ),
                       title: Text(
                         item.$1,
                         style: TextStyle(
-                          color: selected ? AppColors.gold : AppColors.onNavy,
+                          color: selected ? AppColors.primary : AppColors.textPrimary,
                           fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -885,15 +885,15 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           final selected = index == safeIndex;
           return ListTile(
             selected: selected,
-            selectedTileColor: AppColors.surfaceRaised,
+            selectedTileColor: AppColors.primaryContainer,
             leading: Icon(
               nav.icon,
-              color: selected ? AppColors.gold : AppColors.muted,
+              color: selected ? AppColors.primary : AppColors.textSecondary,
             ),
             title: Text(
               nav.label,
               style: TextStyle(
-                color: selected ? AppColors.gold : AppColors.onNavy,
+                color: selected ? AppColors.primary : AppColors.textPrimary,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -901,7 +901,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                 ? const Icon(
                     Icons.shield_outlined,
                     size: 15,
-                    color: AppColors.gold,
+                    color: AppColors.accent,
                   )
                 : null,
             onTap: () {
@@ -923,7 +923,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               children: [
                 const Icon(
                   Icons.school_outlined,
-                  color: AppColors.gold,
+                  color: AppColors.primary,
                   size: 28,
                 ),
                 const SizedBox(width: 10),
@@ -931,7 +931,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
                   child: Text(
                     'Liah Academy SMS',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.onNavy,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
@@ -954,7 +954,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
             Container(
               width: 260,
               decoration: const BoxDecoration(
-                color: AppColors.navyDeep,
+                color: AppColors.surface,
                 border: Border(right: BorderSide(color: AppColors.border)),
               ),
               child: Column(
@@ -983,7 +983,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     return Scaffold(
       appBar: _buildAppBar(context, selectedItem.label, activeRole),
       drawer: Drawer(
-        backgroundColor: AppColors.navyDeep,
+        backgroundColor: AppColors.surface,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1155,7 +1155,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(icon, color: AppColors.gold, size: 32),
+                  Icon(icon, color: AppColors.primary, size: 32),
                   StatusChip(status: status),
                 ],
               ),
@@ -1163,7 +1163,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               Text(
                 title,
                 style: const TextStyle(
-                  color: AppColors.onNavy,
+                  color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1171,7 +1171,7 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
               const SizedBox(height: 6),
               Text(
                 subtitle,
-                style: const TextStyle(color: AppColors.muted, fontSize: 13),
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
           ),
@@ -1195,7 +1195,8 @@ class _ProfileRoleBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      backgroundColor: AppColors.navyDeep,
+      backgroundColor: AppColors.primary,
+      borderColor: AppColors.primaryLight,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1204,14 +1205,14 @@ class _ProfileRoleBanner extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppColors.goldTint,
+                backgroundColor: AppColors.primaryContainer,
                 child: Text(
                   (profile?.fullName.isNotEmpty == true
                           ? profile!.fullName[0]
                           : 'L')
                       .toUpperCase(),
                   style: const TextStyle(
-                    color: AppColors.gold,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -1225,7 +1226,7 @@ class _ProfileRoleBanner extends StatelessWidget {
                     Text(
                       profile?.fullName ?? 'Authenticated User',
                       style: const TextStyle(
-                        color: AppColors.onNavy,
+                        color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1233,7 +1234,7 @@ class _ProfileRoleBanner extends StatelessWidget {
                     Text(
                       profile?.email ?? '',
                       style: const TextStyle(
-                        color: AppColors.muted,
+                        color: Colors.white70,
                         fontSize: 12,
                       ),
                     ),
@@ -1244,7 +1245,7 @@ class _ProfileRoleBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
+          const Divider(color: AppColors.primaryLight, height: 1),
           const SizedBox(height: 10),
           Wrap(
             spacing: 6,
@@ -1254,14 +1255,12 @@ class _ProfileRoleBanner extends StatelessWidget {
                 ChoiceChip(
                   label: Text(role.label),
                   selected: activeRole == role,
-                  selectedColor: AppColors.gold,
-                  backgroundColor: AppColors.surfaceRaised,
-                  labelStyle: TextStyle(
+                  selectedColor: AppColors.accent,
+                  backgroundColor: AppColors.primaryLight,
+                  labelStyle: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: activeRole == role
-                        ? AppColors.navyDeep
-                        : AppColors.onNavy,
+                    color: Colors.white,
                   ),
                   onSelected: (_) => onRoleChanged(role),
                 ),
@@ -1306,14 +1305,14 @@ class _AdminQuickTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: AppColors.gold, size: 24),
+          Icon(icon, color: AppColors.primary, size: 24),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
                 style: const TextStyle(
-                  color: AppColors.onNavy,
+                  color: AppColors.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
@@ -1324,7 +1323,7 @@ class _AdminQuickTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: AppColors.muted,
+                  color: AppColors.textSecondary,
                   fontSize: 11,
                 ),
               ),
