@@ -70,7 +70,6 @@ BEGIN
         email,
         encrypted_password,
         email_confirmed_at,
-        confirmed_at,
         raw_app_meta_data,
         raw_user_meta_data,
         created_at,
@@ -83,7 +82,6 @@ BEGIN
         LOWER(v_email),
         crypt('password123', gen_salt('bf')),
         NOW(),
-        NOW(),
         '{"provider":"email","providers":["email"]}'::jsonb,
         jsonb_build_object('full_name', v_full_name, 'role', v_role_code),
         NOW(),
@@ -93,7 +91,6 @@ BEGIN
       UPDATE auth.users SET
         encrypted_password = crypt('password123', gen_salt('bf')),
         email_confirmed_at = NOW(),
-        confirmed_at = NOW(),
         aud = 'authenticated',
         role = 'authenticated',
         raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb,
