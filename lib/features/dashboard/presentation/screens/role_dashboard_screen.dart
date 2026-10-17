@@ -13,7 +13,11 @@ import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 import '../../../registration/presentation/screens/course_registration_screen.dart';
-import '../../../students/presentation/screens/create_student_screen.dart';
+import '../../../administration/presentation/screens/admin_dashboard_view.dart';
+import '../../../administration/presentation/screens/super_admin_dashboard_view.dart';
+import '../../../administration/presentation/widgets/admin_management_view.dart';
+import '../../../administration/presentation/widgets/audit_log_table.dart';
+import '../../../administration/presentation/widgets/fee_config_view.dart';
 import '../../../students/presentation/screens/student_list_screen.dart';
 
 /// Unified role-based dashboard supporting:
@@ -851,13 +855,13 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
       const _AdminNavItem('Settings', Icons.settings_outlined),
       if (isSuperAdmin) ...[
         const _AdminNavItem(
-          'Roles & Permissions',
-          Icons.admin_panel_settings_outlined,
+          'Admin Management',
+          Icons.manage_accounts_outlined,
           superAdminOnly: true,
         ),
         const _AdminNavItem(
-          'System Configuration',
-          Icons.tune_outlined,
+          'Fee & Credit Config',
+          Icons.request_quote_outlined,
           superAdminOnly: true,
         ),
         const _AdminNavItem(
@@ -866,8 +870,8 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           superAdminOnly: true,
         ),
         const _AdminNavItem(
-          'Fee & Credit Config',
-          Icons.request_quote_outlined,
+          'System Configuration',
+          Icons.tune_outlined,
           superAdminOnly: true,
         ),
       ],
@@ -1011,64 +1015,20 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     String sectionLabel,
   ) {
     return switch (sectionLabel) {
-      'Dashboard' => ListView(
-          padding: const EdgeInsets.all(16),
+      'Dashboard' => Column(
           children: [
-            _ProfileRoleBanner(
-              profile: profile,
-              activeRole: activeRole,
-              onRoleChanged: _selectRole,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: _ProfileRoleBanner(
+                profile: profile,
+                activeRole: activeRole,
+                onRoleChanged: _selectRole,
+              ),
             ),
-            const SizedBox(height: 16),
-            SectionHeader(
-              title: '${activeRole.label} Workspace',
-              subtitle: 'Core administration & school operations',
-            ),
-            GridView.count(
-              crossAxisCount: MediaQuery.sizeOf(context).width > 700 ? 3 : 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.35,
-              children: [
-                _AdminQuickTile(
-                  icon: Icons.how_to_reg_outlined,
-                  title: 'Admissions',
-                  subtitle: 'Applicant processing',
-                  onTap: () => setState(() => _selectedIndex = 1),
-                ),
-                _AdminQuickTile(
-                  icon: Icons.people_alt_outlined,
-                  title: 'Students',
-                  subtitle: 'Student roster & profiles',
-                  onTap: () => setState(() => _selectedIndex = 2),
-                ),
-                _AdminQuickTile(
-                  icon: Icons.person_add_alt_1_outlined,
-                  title: 'Create Student',
-                  subtitle: 'Matricule auto-generation',
-                  onTap: () => context.push(CreateStudentScreen.routePath),
-                ),
-                _AdminQuickTile(
-                  icon: Icons.school_outlined,
-                  title: 'Academics',
-                  subtitle: 'Courses & offerings',
-                  onTap: () => setState(() => _selectedIndex = 4),
-                ),
-                _AdminQuickTile(
-                  icon: Icons.payments_outlined,
-                  title: 'Finance',
-                  subtitle: 'Tuition & payment reconciliation',
-                  onTap: () => setState(() => _selectedIndex = 5),
-                ),
-                _AdminQuickTile(
-                  icon: Icons.assignment_turned_in_outlined,
-                  title: 'Results',
-                  subtitle: 'Exam Board workflow',
-                  onTap: () => setState(() => _selectedIndex = 6),
-                ),
-              ],
+            Expanded(
+              child: activeRole == AppRole.superAdmin
+                  ? const SuperAdminDashboardView()
+                  : const AdminDashboardView(),
             ),
           ],
         ),
@@ -1105,11 +1065,9 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           status: 'ACTIVE',
         ),
       'Settings' => _buildStudentMoreTab(context, profile, activeRole),
-      'Roles & Permissions' => _buildFeatureModulePlaceholder(
-          title: 'Roles & Permissions Matrix',
-          subtitle: 'Manage RBAC permissions for Super Admin, Admin, Lecturer, and Student.',
-          icon: Icons.admin_panel_settings_outlined,
-          status: 'SUPER ADMIN',
+      'Admin Management' || 'Roles & Permissions' => SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: AdminManagementView(actorRole: activeRole),
         ),
       'System Configuration' => _buildFeatureModulePlaceholder(
           title: 'System Configuration',
@@ -1117,17 +1075,13 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
           icon: Icons.tune_outlined,
           status: 'SUPER ADMIN',
         ),
-      'Audit Logs' => _buildFeatureModulePlaceholder(
-          title: 'Security Audit Logs',
-          subtitle: 'Immutable record of security events, grade approvals, and user modifications.',
-          icon: Icons.history_edu_outlined,
-          status: 'SUPER ADMIN',
+      'Audit Logs' => const SingleChildScrollView(
+          padding: EdgeInsets.all(20),
+          child: AuditLogTable(),
         ),
-      'Fee & Credit Config' => _buildFeatureModulePlaceholder(
-          title: 'Fee & Credit Bounds Configuration',
-          subtitle: 'Set semester credit limits (15-24 credits) and program tuition structures.',
-          icon: Icons.request_quote_outlined,
-          status: 'SUPER ADMIN',
+      'Fee & Credit Config' => const SingleChildScrollView(
+          padding: EdgeInsets.all(20),
+          child: FeeConfigView(),
         ),
       _ => _buildFeatureModulePlaceholder(
           title: sectionLabel,
@@ -1284,53 +1238,3 @@ class _AdminNavItem {
   final bool superAdminOnly;
 }
 
-class _AdminQuickTile extends StatelessWidget {
-  const _AdminQuickTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: AppColors.primary, size: 24),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
