@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/auth/domain/entities/user_profile.dart';
-import '../features/auth/presentation/screens/forgot_password_screen.dart';
-import '../features/auth/presentation/screens/login_screen.dart';
-import '../features/auth/presentation/screens/reset_password_confirmation_screen.dart';
-import '../features/auth/presentation/screens/splash_screen.dart';
-import '../features/auth/presentation/screens/two_factor_auth_screen.dart';
-import '../features/dashboard/presentation/screens/role_dashboard_screen.dart';
-import '../features/registration/presentation/screens/course_registration_screen.dart';
-import '../features/students/presentation/screens/create_student_screen.dart';
-import '../features/students/presentation/screens/student_list_screen.dart';
+import '../features/auth/models/user_profile.dart';
+import '../features/auth/screens/forgot_password_screen.dart';
+import '../features/auth/screens/login_screen.dart';
+import '../features/auth/screens/reset_password_confirmation_screen.dart';
+import '../features/auth/screens/splash_screen.dart';
+import '../features/auth/screens/two_factor_auth_screen.dart';
+import '../features/dashboard/screens/role_dashboard_screen.dart';
+import '../features/registration/screens/course_registration_screen.dart';
+import '../features/students/screens/create_student_screen.dart';
+import '../features/students/screens/student_list_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(

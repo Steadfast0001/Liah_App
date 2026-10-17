@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liah_app/features/administration/domain/entities/fee_config.dart';
+import 'package:liah_app/features/administration/models/fee_config.dart';
 
 void main() {
   group('FeeConfiguration Tests', () {

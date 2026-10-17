@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:liah_app/features/administration/domain/entities/password_reset_authority.dart';
-import 'package:liah_app/features/auth/domain/entities/user_profile.dart';
+import 'package:liah_app/features/administration/models/password_reset_authority.dart';
+import 'package:liah_app/features/auth/models/user_profile.dart';
 
 void main() {
   group('PasswordResetAuthority Unit Tests', () {

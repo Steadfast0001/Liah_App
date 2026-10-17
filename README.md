@@ -4,7 +4,7 @@ Flutter mobile/web client + Supabase backend for **Liah Academy School Managemen
 
 ## Architecture
 
-- **Flutter Client:** Clean Architecture, feature-first layout under `lib/features/`, **Riverpod** state management + **go_router** navigation.
+- **Flutter Client:** Beginner-friendly feature-first layout under `lib/features/`, **Riverpod** state management + **go_router** navigation. Each feature uses `models/`, `services/`, `providers/`, `screens/`, and `widgets/`.
 - **Theme:** Liah Academy brand palette (`AppColors.navy`, `AppColors.navyDeep`, `AppColors.gold`, `AppColors.onNavy`) defined in `lib/app/theme/`.
 - **Supabase Backend:** PostgreSQL with strict Row-Level Security (default deny), `auth.users` → `public.profiles` trigger mapping, RBAC (`roles`, `permissions`, `profile_roles`), and Deno **Edge Functions** for all privileged mutations.
 
@@ -40,10 +40,21 @@ liah_app/
     ├── app/                           ← AppTheme, AppColors, GoRouter, bootstrap
     ├── core/                          ← Env, EdgeFunctionClient, formatters, widgets
     └── features/
-        ├── authentication/            ← Sign-in, session stream, Auth → Profile & Role mapping
-        ├── dashboard/                 ← Role-based workspace shell (Super Admin / Admin / Lecturer / Student)
-        ├── students/                  ← Student directory & Admin Create Student screen
-        └── course_registration/       ← Semester course registration & drop screen
+        ├── README.md                  ← What each feature folder is for
+        ├── academics/
+        ├── administration/
+        ├── admissions/
+        ├── announcements/
+        ├── attendance/
+        ├── auth/                      ← Sign-in, sessions, profiles, and roles
+        ├── dashboard/                 ← Role-based workspace shell
+        ├── documents/
+        ├── fees/
+        ├── registration/              ← Course registration and drop screen
+        ├── reports/
+        ├── results/
+        ├── staff/
+        └── students/                  ← Student directory and create-student screen
 ```
 
 ## Supabase Environments

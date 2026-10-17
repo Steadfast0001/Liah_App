@@ -43,13 +43,16 @@ abstract final class AppColors {
   static const border = Color(0xFFE2E8F0);
   static const borderDark = Color(0xFFD5DBDB);
 
-  // --- Aliases for Backward Compatibility ---
-  static const navy = primary;
-  static const navyDeep = primary;
-  static const gold = accent;
-  static const goldTint = accentContainer;
-  static const onNavy = textPrimary;
-  static const muted = textSecondary;
-  static const successBackground = secondaryContainer;
-  static const successText = secondary;
+  // --- Fah Academy Navy & Gold Palette ---
+  static const navy = Color(0xFF101D50);
+  static const navyDeep = Color(0xFF0B153D);
+  static const surfaceNavy = Color(0xFF17265E);
+  static const surfaceRaisedNavy = Color(0xFF20336F);
+  static const gold = Color(0xFFE4B62A);
+  static const onNavy = Color(0xFFF7F8FC);
+  static const muted = Color(0xFFB8C1D3);
+  static const borderNavy = Color(0xFF344675);
+  static const goldTint = Color(0x33E4B62A);
+  static const successBackground = Color(0xFFD8F0DC);
+  static const successText = Color(0xFF245333);
 }
