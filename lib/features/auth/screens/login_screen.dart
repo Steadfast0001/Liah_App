@@ -54,7 +54,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final profile = await ref.read(authRepositoryProvider).fetchCurrentUserProfile();
       if (!mounted) return;
 
-      final role = profile?.primaryRole ?? AppRole.student;
+      if (profile == null || profile.roles.isEmpty) {
+        setState(() => _error =
+            'Authenticated successfully, but no active role was found in the database. Please contact your administrator.');
+        return;
+      }
+
+      final role = profile.primaryRole;
       // 2FA Security Enhancement: Required for SuperAdmin and Admin
       if (role == AppRole.superAdmin || role == AppRole.admin) {
         context.go('${TwoFactorAuthScreen.routePath}?email=$normalizedEmail&role=${role.code}');
@@ -68,11 +74,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _fillDemo(String email) {
-    _emailController.text = email;
-    _passwordController.text = 'password123';
   }
 
   @override
@@ -157,44 +158,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       loading: _loading,
                       fullWidth: true,
                       onPressed: _submit,
-                    ),
-                    const SizedBox(height: 24),
-                    const Divider(color: AppColors.border),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Quick Demo Login Accounts (Password: password123):',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ActionChip(
-                          avatar: const Icon(Icons.shield_outlined, size: 16, color: AppColors.primary),
-                          label: const Text('SuperAdmin'),
-                          onPressed: () => _fillDemo('superadmin@liah.com'),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.primary),
-                          label: const Text('Admin'),
-                          onPressed: () => _fillDemo('admin@liah.com'),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(Icons.co_present_outlined, size: 16, color: AppColors.primary),
-                          label: const Text('Lecturer'),
-                          onPressed: () => _fillDemo('lecturer@liah.com'),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(Icons.school_outlined, size: 16, color: AppColors.primary),
-                          label: const Text('Student'),
-                          onPressed: () => _fillDemo('student@liah.com'),
-                        ),
-                      ],
                     ),
                   ],
                 ),

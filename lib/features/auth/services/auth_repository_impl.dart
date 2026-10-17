@@ -54,17 +54,36 @@ class AuthRepositoryImpl implements AuthRepository {
             if (appRole != null && !parsedRoles.contains(appRole)) {
               parsedRoles.add(appRole);
             }
+          } else if (roleData is List && roleData.isNotEmpty) {
+            for (final item in roleData) {
+              if (item is Map<String, dynamic>) {
+                final appRole = AppRole.fromCode(item['code'] as String?);
+                if (appRole != null && !parsedRoles.contains(appRole)) {
+                  parsedRoles.add(appRole);
+                }
+              }
+            }
           }
         }
       }
 
-      // Fallback to auth metadata role if profile_roles hasn't been seeded yet
+      // Check user metadata role (stored during signup/seed in auth.users)
       if (parsedRoles.isEmpty) {
         final metaRole = AppRole.fromCode(
           user.userMetadata?['role']?.toString(),
         );
         if (metaRole != null) {
           parsedRoles.add(metaRole);
+        }
+      }
+
+      // Check app metadata role
+      if (parsedRoles.isEmpty) {
+        final appMetaRole = AppRole.fromCode(
+          user.appMetadata['role']?.toString(),
+        );
+        if (appMetaRole != null) {
+          parsedRoles.add(appMetaRole);
         }
       }
 

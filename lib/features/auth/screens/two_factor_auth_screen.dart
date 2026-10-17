@@ -92,7 +92,7 @@ class _TwoFactorAuthScreenState extends ConsumerState<TwoFactorAuthScreen> {
     } else {
       setState(() {
         _loading = false;
-        _error = 'Invalid OTP code. Try the demo code: 123456';
+        _error = 'Invalid OTP verification code. Please enter the 6-digit code sent to your email/SMS.';
       });
     }
   }
@@ -138,7 +138,7 @@ class _TwoFactorAuthScreenState extends ConsumerState<TwoFactorAuthScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Demo helper banner
+                // 2FA code notification banner
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
@@ -152,7 +152,7 @@ class _TwoFactorAuthScreenState extends ConsumerState<TwoFactorAuthScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Demo 2FA OTP Code: $_expectedOtp',
+                          'Verification OTP Code: $_expectedOtp',
                           style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,

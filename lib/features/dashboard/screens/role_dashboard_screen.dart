@@ -44,15 +44,7 @@ class RoleDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
-  AppRole? _previewRoleOverride;
   int _selectedIndex = 0;
-
-  void _selectRole(AppRole role) {
-    setState(() {
-      _previewRoleOverride = role;
-      _selectedIndex = 0;
-    });
-  }
 
   // Navigation matrices specified by Fah Academy RBAC specification
   static const _superAdminNavItems = [
@@ -128,8 +120,84 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         ),
       ),
       data: (profile) {
-        final activeRole =
-            _previewRoleOverride ?? profile?.primaryRole ?? AppRole.admin;
+        if (profile == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Fah Academy SMS')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 64, color: AppColors.error),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No Authenticated Session',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('Please sign in to access your dashboard.'),
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Go to Sign In',
+                      onPressed: () => context.go(LoginScreen.routePath),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (profile.roles.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Fah Academy SMS'),
+              actions: [
+                IconButton(
+                  tooltip: 'Sign out',
+                  onPressed: () async {
+                    await ref.read(authRepositoryProvider).signOut();
+                    if (context.mounted) context.go(LoginScreen.routePath);
+                  },
+                  icon: const Icon(Icons.logout),
+                ),
+              ],
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.no_accounts_outlined, size: 64, color: AppColors.warning),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Role Assigned',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Account (${profile.email}) is authenticated, but no active role was found in the database. Please contact your system administrator.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Sign Out',
+                      onPressed: () async {
+                        await ref.read(authRepositoryProvider).signOut();
+                        if (context.mounted) context.go(LoginScreen.routePath);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final activeRole = profile.primaryRole;
 
         final items = _navItemsForRole(activeRole);
         final safeIndex = _selectedIndex.clamp(0, items.length - 1);
@@ -284,19 +352,6 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
     return AppBar(
       title: Text(title),
       actions: [
-        PopupMenuButton<AppRole>(
-          tooltip: 'Switch role preview (RBAC Testing)',
-          icon: const Icon(Icons.switch_account_outlined),
-          onSelected: _selectRole,
-          itemBuilder: (context) => [
-            for (final role in AppRole.values)
-              CheckedPopupMenuItem<AppRole>(
-                value: role,
-                checked: role == activeRole,
-                child: Text(role.label),
-              ),
-          ],
-        ),
         IconButton(
           tooltip: 'Sign out',
           onPressed: () async {
@@ -494,7 +549,6 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         _ProfileRoleBanner(
           profile: profile,
           activeRole: activeRole,
-          onRoleChanged: _selectRole,
         ),
         const SizedBox(height: 16),
         const SectionHeader(
@@ -704,7 +758,6 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         _ProfileRoleBanner(
           profile: profile,
           activeRole: activeRole,
-          onRoleChanged: _selectRole,
         ),
         const SizedBox(height: 16),
         const SectionHeader(
@@ -769,7 +822,6 @@ class _RoleDashboardScreenState extends ConsumerState<RoleDashboardScreen> {
         _ProfileRoleBanner(
           profile: profile,
           activeRole: activeRole,
-          onRoleChanged: _selectRole,
         ),
         const SizedBox(height: 16),
         const SectionHeader(
@@ -1075,12 +1127,10 @@ class _ProfileRoleBanner extends StatelessWidget {
   const _ProfileRoleBanner({
     required this.profile,
     required this.activeRole,
-    required this.onRoleChanged,
   });
 
   final UserProfile? profile;
   final AppRole activeRole;
-  final ValueChanged<AppRole> onRoleChanged;
 
   @override
   Widget build(BuildContext context) {
