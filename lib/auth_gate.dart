@@ -20,85 +20,116 @@ class _AuthGateState extends State<AuthGate> {
   late final Future<_StoredSession?> _session = _readSession();
 
   Future<_StoredSession?> _readSession() async {
-    final client = Supabase.instance.client;
-    final currentSession = client.auth.currentSession;
-    final currentUser = client.auth.currentUser;
-
-    if (currentSession == null || currentUser == null) {
-      final token = await widget.sessionStore.readToken();
-      if ((token ?? '').isEmpty) return null;
-      final roleStr = await widget.sessionStore.readRole();
-      return _StoredSession(
-        token: token!,
-        role: DashboardRoleLabel.fromString(roleStr),
-        email: await widget.sessionStore.readEmail(),
-        fullName: await widget.sessionStore.readFullName(),
-      );
-    }
-
-    // Resolve real role from database
-    DashboardRole resolvedRole = DashboardRole.student;
-    String? fullName;
-
     try {
-      final roleRows = await client
-          .from('profile_roles')
-          .select('roles(code, name)')
-          .eq('profile_id', currentUser.id);
+      SupabaseClient? client;
+      try {
+        client = Supabase.instance.client;
+      } catch (_) {
+        client = null;
+      }
 
-      for (final row in (roleRows as List<dynamic>)) {
-        if (row is Map<String, dynamic>) {
-          final roleData = row['roles'];
-          if (roleData is Map<String, dynamic>) {
-            final code = roleData['code']?.toString();
-            resolvedRole = DashboardRoleLabel.fromString(code);
-            break;
-          } else if (roleData is List && roleData.isNotEmpty) {
-            final first = roleData.first;
-            if (first is Map<String, dynamic>) {
-              resolvedRole = DashboardRoleLabel.fromString(first['code']?.toString());
+      if (client == null) {
+        return null;
+      }
+
+      final currentSession = client.auth.currentSession;
+      final currentUser = client.auth.currentUser;
+
+      if (currentSession == null || currentUser == null) {
+        final token = await widget.sessionStore.readToken().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => null,
+        );
+        if ((token ?? '').isEmpty) return null;
+        final roleStr = await widget.sessionStore.readRole().timeout(
+          const Duration(seconds: 2),
+          onTimeout: () => 'student',
+        );
+        return _StoredSession(
+          token: token!,
+          role: DashboardRoleLabel.fromString(roleStr),
+          email: await widget.sessionStore.readEmail().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () => null,
+          ),
+          fullName: await widget.sessionStore.readFullName().timeout(
+            const Duration(seconds: 2),
+            onTimeout: () => null,
+          ),
+        );
+      }
+
+      // Resolve real role from database
+      DashboardRole resolvedRole = DashboardRole.student;
+      String? fullName;
+
+      try {
+        final roleRows = await client
+            .from('profile_roles')
+            .select('roles(code, name)')
+            .eq('profile_id', currentUser.id)
+            .timeout(const Duration(seconds: 3));
+
+        for (final row in (roleRows as List<dynamic>)) {
+          if (row is Map<String, dynamic>) {
+            final roleData = row['roles'];
+            if (roleData is Map<String, dynamic>) {
+              final code = roleData['code']?.toString();
+              resolvedRole = DashboardRoleLabel.fromString(code);
               break;
+            } else if (roleData is List && roleData.isNotEmpty) {
+              final first = roleData.first;
+              if (first is Map<String, dynamic>) {
+                resolvedRole =
+                    DashboardRoleLabel.fromString(first['code']?.toString());
+                break;
+              }
             }
           }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
 
-    // Fallback to user metadata role
-    if (resolvedRole == DashboardRole.student) {
-      final metaRole = currentUser.userMetadata?['role']?.toString();
-      if (metaRole != null) {
-        resolvedRole = DashboardRoleLabel.fromString(metaRole);
+      // Fallback to user metadata role
+      if (resolvedRole == DashboardRole.student) {
+        final metaRole = currentUser.userMetadata?['role']?.toString();
+        if (metaRole != null) {
+          resolvedRole = DashboardRoleLabel.fromString(metaRole);
+        }
       }
+
+      try {
+        final profile = await client
+            .from('profiles')
+            .select('full_name')
+            .eq('id', currentUser.id)
+            .maybeSingle()
+            .timeout(const Duration(seconds: 3));
+        if (profile != null) {
+          fullName = profile['full_name'] as String?;
+        }
+      } catch (_) {}
+
+      fullName ??= currentUser.userMetadata?['full_name']?.toString() ??
+          currentUser.email?.split('@').first;
+
+      try {
+        await widget.sessionStore.saveLocalSessionForRole(
+          resolvedRole.name,
+          token: currentSession.accessToken,
+          email: currentUser.email,
+          fullName: fullName,
+        );
+      } catch (_) {}
+
+      return _StoredSession(
+        token: currentSession.accessToken,
+        role: resolvedRole,
+        email: currentUser.email,
+        fullName: fullName,
+      );
+    } catch (_) {
+      return null;
     }
-
-    try {
-      final profile = await client
-          .from('profiles')
-          .select('full_name')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-      if (profile != null) {
-        fullName = profile['full_name'] as String?;
-      }
-    } catch (_) {}
-
-    fullName ??= currentUser.userMetadata?['full_name']?.toString() ??
-        currentUser.email?.split('@').first;
-
-    await widget.sessionStore.saveLocalSessionForRole(
-      resolvedRole.name,
-      token: currentSession.accessToken,
-      email: currentUser.email,
-      fullName: fullName,
-    );
-
-    return _StoredSession(
-      token: currentSession.accessToken,
-      role: resolvedRole,
-      email: currentUser.email,
-      fullName: fullName,
-    );
   }
 
   @override
@@ -108,6 +139,9 @@ class _AuthGateState extends State<AuthGate> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const _SessionLoadingScreen();
+        }
+        if (snapshot.hasError) {
+          return LoginPage(sessionStore: widget.sessionStore);
         }
         final session = snapshot.data;
         if (session == null) {
