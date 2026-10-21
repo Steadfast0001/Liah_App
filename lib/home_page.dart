@@ -2,7 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'course_registration_page.dart';
 import 'dashboard_data.dart';
+import 'student_academics_page.dart';
+import 'student_announcements_page.dart';
+import 'student_attendance_page.dart';
+import 'student_dashboard_page.dart';
+import 'student_documents_page.dart';
+import 'student_fees_page.dart';
+import 'student_notifications_page.dart';
+import 'student_profile_page.dart';
+import 'student_results_page.dart';
+import 'student_settings_page.dart';
+import 'student_timetable_page.dart';
 
 class Course {
   final String name;
@@ -250,13 +262,28 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildStudentPortalScaffold(DashboardData data) {
     const tabSectionNames = [
-      'ACADEMIC OVERVIEW',
-      'COURSE REGISTRATION',
-      'FEES CLEARANCE (FCFA)',
-      'RESULTS & GPA'
+      'HOME DASHBOARD',
+      'ACADEMICS & COURSES',
+      'NOTIFICATIONS',
+      'STUDENT PROFILE'
     ];
     final currentSection = tabSectionNames[_studentTabIndex];
     final isDesktop = MediaQuery.sizeOf(context).width >= 850;
+
+    final studentPages = [
+      StudentDashboardPage(
+        data: data,
+        onRefresh: () async => setState(_loadDashboard),
+        onSignOut: widget.onSignOut,
+      ),
+      const StudentAcademicsPage(),
+      const StudentNotificationsPage(),
+      StudentProfilePage(
+        studentName: data.displayName.isNotEmpty ? data.displayName : 'Student',
+        matricule: data.userId.isNotEmpty ? data.userId : 'LIAH-2024-SW0482',
+        email: 'student@liah.com',
+      ),
+    ];
 
     if (isDesktop) {
       return Scaffold(
@@ -283,12 +310,7 @@ class _HomePageState extends State<HomePage> {
                         constraints: const BoxConstraints(maxWidth: 1150),
                         child: IndexedStack(
                           index: _studentTabIndex,
-                          children: [
-                            _buildStudentHomeTab(data),
-                            _buildStudentAcademicsTab(data),
-                            _buildStudentFeesTab(data),
-                            _buildStudentResultsTab(data),
-                          ],
+                          children: studentPages,
                         ),
                       ),
                     ),
@@ -319,12 +341,7 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: IndexedStack(
           index: _studentTabIndex,
-          children: [
-            _buildStudentHomeTab(data),
-            _buildStudentAcademicsTab(data),
-            _buildStudentFeesTab(data),
-            _buildStudentResultsTab(data),
-          ],
+          children: studentPages,
         ),
       ),
       bottomNavigationBar: Container(
@@ -354,14 +371,14 @@ class _HomePageState extends State<HomePage> {
               label: 'Academics',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              activeIcon: Icon(Icons.account_balance_wallet),
-              label: 'Fees',
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Notifications',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.insights_outlined),
-              activeIcon: Icon(Icons.insights),
-              label: 'Results',
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),
@@ -587,10 +604,10 @@ class _HomePageState extends State<HomePage> {
 
     final menuItems = role == DashboardRole.student
         ? [
-            (Icons.dashboard_outlined, 'Academic Overview', 0),
-            (Icons.school_outlined, 'Course Registration', 1),
-            (Icons.account_balance_wallet_outlined, 'Fees Clearance (FCFA)', 2),
-            (Icons.insights_outlined, 'Official Results & GPA', 3),
+            (Icons.home_outlined, 'Home Dashboard', 0),
+            (Icons.school_outlined, 'Academics & Courses', 1),
+            (Icons.notifications_outlined, 'Notifications', 2),
+            (Icons.person_outline, 'Student Profile', 3),
           ]
         : (role == DashboardRole.teacher
             ? [
@@ -806,10 +823,10 @@ class _HomePageState extends State<HomePage> {
 
     final menuItems = role == DashboardRole.student
         ? [
-            (Icons.dashboard_outlined, 'Academic Overview', 0),
-            (Icons.school_outlined, 'Course Registration', 1),
-            (Icons.account_balance_wallet_outlined, 'Fees Clearance (FCFA)', 2),
-            (Icons.insights_outlined, 'Official Results & GPA', 3),
+            (Icons.home_outlined, 'Home Dashboard', 0),
+            (Icons.school_outlined, 'Academics & Courses', 1),
+            (Icons.notifications_outlined, 'Notifications', 2),
+            (Icons.person_outline, 'Student Profile', 3),
           ]
         : (role == DashboardRole.teacher
             ? [
