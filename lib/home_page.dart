@@ -416,7 +416,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'FAH ACADEMY • CAMEROON',
+                    'LIAH ACADEMY • CAMEROON',
                     style: TextStyle(
                       color: AppColors.onNavy,
                       fontSize: 12,
@@ -642,7 +642,7 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'FAH ACADEMY',
+                            'LIAH ACADEMY',
                             style: TextStyle(
                               color: AppColors.onNavy,
                               fontSize: 14,
@@ -859,7 +859,7 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'FAH ACADEMY',
+                          'LIAH ACADEMY',
                           style: TextStyle(
                             color: AppColors.onNavy,
                             fontSize: 14,
@@ -1080,7 +1080,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Fah Academy — Faculty of Engineering & Technology\n'
+                'Liah Academy — Faculty of Engineering & Technology\n'
                 'Harmonized Higher Education Senate Standards (MINESUP, Cameroon)',
                 style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold),
               ),
@@ -1227,7 +1227,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${data.displayName.toLowerCase().replaceAll(' ', '.')}@fahacademy.cm',
+                                '${data.displayName.toLowerCase().replaceAll(' ', '.')}@liahacademy.cm',
                                 style: const TextStyle(
                                   color: AppColors.muted,
                                   fontSize: 11,
@@ -1630,11 +1630,11 @@ REPUBLIC OF CAMEROON                             REPUBLIQUE DU CAMEROUN
 Peace - Work - Fatherland                         Paix - Travail - Patrie
 MINISTRY OF HIGHER EDUCATION                     MINISTERE DE L'ENSEIGNEMENT SUPERIEUR
 --------------------------------------------------------------------------------
-                     FAH ACADEMY - FACULTY OF ENGINEERING
+                     LIAH ACADEMY - FACULTY OF ENGINEERING
                  ACADEMIC TRANSCRIPT & STATEMENT OF RESULTS
 ================================================================================
 Student Name:       Clarisse M. Fong
-Matricule / ID:     FAH-2024-SW0482
+Matricule / ID:     LIAH-2024-SW0482
 Degree / Program:   B.Eng Software Engineering
 Academic Year:      2026/2027 • Semester 2
 Class Level:        Level 200 (Year 2)
@@ -1734,7 +1734,7 @@ ISSUED DATE:         October 2026
                                   border: Border.all(color: AppColors.gold),
                                 ),
                                 child: const Text(
-                                  'FAH ACADEMY • STATEMENT OF SEMESTER RESULTS',
+                                  'LIAH ACADEMY • STATEMENT OF SEMESTER RESULTS',
                                   style: TextStyle(
                                     color: AppColors.gold,
                                     fontSize: 11,
@@ -1767,7 +1767,7 @@ ISSUED DATE:         October 2026
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text('MATRICULE NO', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
-                                Text('FAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text('LIAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13)),
                                 SizedBox(height: 6),
                                 Text('ACADEMIC YEAR & SEMESTER', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
                                 Text('2026/2027 • Level 200 • Sem 2', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
@@ -1886,7 +1886,7 @@ ISSUED DATE:         October 2026
                         _downloadDocumentAsPdf(
                           context: context,
                           title: 'Official Result Slip',
-                          fileName: 'MINESUP_Result_Slip_FAH2024SW0482.pdf',
+                          fileName: 'MINESUP_Result_Slip_LIAH2024SW0482.pdf',
                           rawText: docText,
                         );
                       },
@@ -1958,7 +1958,7 @@ ISSUED DATE:         October 2026
   void _showTimetablePdfModal(BuildContext context) {
     const timetableText = '''
 ================================================================================
-FAH ACADEMY • CAMEROON
+LIAH ACADEMY • CAMEROON
 FACULTY OF ENGINEERING & COMPUTING • LEVEL 200 (YEAR 2)
 MASTER LECTURE & VENUE TIMETABLE • SEMESTER 2 • 2026/2027
 ================================================================================
@@ -2036,7 +2036,7 @@ ISSUED: October 2026 • Valid for Academic Term 2026/2027
                       children: [
                         const Center(
                           child: Text(
-                            'FAH ACADEMY • LEVEL 200 (YEAR 2) TIMETABLE\nFaculty of Engineering & Computing • Semester 2',
+                            'LIAH ACADEMY • LEVEL 200 (YEAR 2) TIMETABLE\nFaculty of Engineering & Computing • Semester 2',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
@@ -2083,7 +2083,7 @@ ISSUED: October 2026 • Valid for Academic Term 2026/2027
                         _downloadDocumentAsPdf(
                           context: context,
                           title: 'Master Lecture Timetable',
-                          fileName: 'FAH_Academy_L200_Timetable_S2.pdf',
+                          fileName: 'LIAH_Academy_L200_Timetable_S2.pdf',
                           rawText: timetableText,
                         );
                       },
@@ -2159,13 +2159,13 @@ ISSUED: October 2026 • Valid for Academic Term 2026/2027
   void _showFeeReceiptPdfModal(BuildContext context, DashboardData data) {
     const feeReceiptText = '''
 ================================================================================
-FAH ACADEMY BURSARY & TREASURY BOARD
+LIAH ACADEMY BURSARY & TREASURY BOARD
 OFFICIAL TUITION PAYMENT RECEIPT & CLEARANCE SLIP (FCFA)
 ACADEMIC YEAR 2026/2027 • FIRST & SECOND SEMESTERS
 ================================================================================
 STUDENT DETAILS:
   • Name:             Clarisse M. Fong
-  • Matricule / ID:   FAH-2024-SW0482
+  • Matricule / ID:   LIAH-2024-SW0482
   • Department:       Software Engineering
   • Academic Level:   Level 200 (Year 2)
 
@@ -2238,7 +2238,7 @@ DATE OF ISSUANCE:           October 2026
                       children: [
                         const Center(
                           child: Text(
-                            'FAH ACADEMY • BURSARY AUDIT DESK\nOFFICIAL TUITION PAYMENT RECEIPT & CLEARANCE',
+                            'LIAH ACADEMY • BURSARY AUDIT DESK\nOFFICIAL TUITION PAYMENT RECEIPT & CLEARANCE',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
@@ -2251,7 +2251,7 @@ DATE OF ISSUANCE:           October 2026
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('STUDENT: Clarisse M. Fong', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
-                            Text('MAT: FAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('MAT: LIAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -2348,7 +2348,7 @@ DATE OF ISSUANCE:           October 2026
                         _downloadDocumentAsPdf(
                           context: context,
                           title: 'Bursary Clearance Receipt',
-                          fileName: 'FAH_Bursary_Clearance_FAH2024SW0482.pdf',
+                          fileName: 'LIAH_Bursary_Clearance_LIAH2024SW0482.pdf',
                           rawText: feeReceiptText,
                         );
                       },
@@ -2411,12 +2411,12 @@ DATE OF ISSUANCE:           October 2026
   void _showCourseRegistrationPdfModal(BuildContext context, DashboardData data) {
     const regText = '''
 ================================================================================
-FAH ACADEMY • REPUBLIC OF CAMEROON
+LIAH ACADEMY • REPUBLIC OF CAMEROON
 FORM 74: SEMESTER COURSE REGISTRATION & EXAMINATION CARD
 ACADEMIC YEAR 2026/2027 • SEMESTER 2
 ================================================================================
 STUDENT NAME: Clarisse M. Fong
-MATRICULE:    FAH-2024-SW0482
+MATRICULE:    LIAH-2024-SW0482
 PROGRAM:      B.Eng Software Engineering (Level 200 / Year 2)
 TOTAL LOAD:   21 Credit Units
 --------------------------------------------------------------------------------
@@ -2492,7 +2492,7 @@ REGISTRAR APPROVAL:    MINESUP-REG-74-VALIDATED
                 _downloadDocumentAsPdf(
                   context: context,
                   title: 'Form 74 Course Registration Slip',
-                  fileName: 'FAH_Form74_Course_Registration.pdf',
+                  fileName: 'LIAH_Form74_Course_Registration.pdf',
                   rawText: regText,
                 );
               },
@@ -2509,20 +2509,20 @@ REGISTRAR APPROVAL:    MINESUP-REG-74-VALIDATED
   void _showGradeBroadsheetPdfModal(BuildContext context, String courseCode) {
     const broadsheetText = '''
 ================================================================================
-FAH ACADEMY • SENATE EXAMINATION BOARD
+LIAH ACADEMY • SENATE EXAMINATION BOARD
 OFFICIAL GRADE BROADSHEET • CONTINUOUS ASSESSMENT & TERMINAL EXAMINATION
 ================================================================================
 COURSE:     SWE201 - Advanced Data Structures (4 Credit Units)
-LECTURER:   Dr. Raymond Vance (Staff ID: FAH-FAC-014)
+LECTURER:   Dr. Raymond Vance (Staff ID: LIAH-FAC-014)
 SEMESTER:   2026/2027 Semester 2 • Class: Level 200 (Cohort A)
 --------------------------------------------------------------------------------
 MATRICULE       | STUDENT NAME         | CA /30 | EX /70 | TOTAL | GRADE | STATUS
 --------------------------------------------------------------------------------
-FAH-2026-SV0482 | Brenda N. Tabi       | 28.5   | 62.0   | 90.5  | A     | PASSED
-FAH-2026-SV0419 | Emmanuel K. Che      | 26.0   | 58.0   | 84.0  | A     | PASSED
-FAH-2026-SV0390 | Divine F. Ayuk       | 24.5   | 51.5   | 76.0  | B+    | PASSED
-FAH-2026-SV0532 | Marcelle O. Ndong    | 12.0   | 24.0   | 36.0  | F     | RESIT
-FAH-2026-SV0441 | Boris T. Enow        | 22.0   | 48.0   | 70.0  | B+    | PASSED
+LIAH-2026-SV0482 | Brenda N. Tabi       | 28.5   | 62.0   | 90.5  | A     | PASSED
+LIAH-2026-SV0419 | Emmanuel K. Che      | 26.0   | 58.0   | 84.0  | A     | PASSED
+LIAH-2026-SV0390 | Divine F. Ayuk       | 24.5   | 51.5   | 76.0  | B+    | PASSED
+LIAH-2026-SV0532 | Marcelle O. Ndong    | 12.0   | 24.0   | 36.0  | F     | RESIT
+LIAH-2026-SV0441 | Boris T. Enow        | 22.0   | 48.0   | 70.0  | B+    | PASSED
 --------------------------------------------------------------------------------
 SENATE COMPLIANCE: 80% Pass Rate • 1 Flagged Resit • Harmonized 4.0 GP Scale
 SUBMITTED BY:      Dr. Raymond Vance (Designated Lecturer)
@@ -4545,7 +4545,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         ),
         const SizedBox(height: 6),
         const Text(
-          'Fah Academy accepts direct transfers and teller deposits via our accredited banking partners. Use student matricule as transaction reference.',
+          'Liah Academy accepts direct transfers and teller deposits via our accredited banking partners. Use student matricule as transaction reference.',
           style: TextStyle(color: AppColors.muted, fontSize: 11),
         ),
         const SizedBox(height: 10),
@@ -5509,7 +5509,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
               ),
               const SizedBox(height: 8),
               const Text(
-                'All financial milestones and tuition fee obligations for Semester 2 were completely verified by the Bursary Department on June 20, 2026. This official record has been encrypted, digitally countersigned by the Registrar, and constitutes a legally valid Fah Academy academic statement.',
+                'All financial milestones and tuition fee obligations for Semester 2 were completely verified by the Bursary Department on June 20, 2026. This official record has been encrypted, digitally countersigned by the Registrar, and constitutes a legally valid Liah Academy academic statement.',
                 style: TextStyle(color: AppColors.muted, fontSize: 10, height: 1.4),
               ),
               const Divider(color: AppColors.border, height: 20),
@@ -5517,7 +5517,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Reference: FAH-2026-S2-77491-REG',
+                    'Reference: LIAH-2026-S2-77491-REG',
                     style: TextStyle(color: AppColors.muted, fontSize: 9),
                   ),
                   Row(
@@ -6019,7 +6019,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         : 'Dr. Raymond Vance';
     final facultyId = data.userId.isNotEmpty && data.userId != 'LC-2026-001'
         ? data.userId
-        : 'FAH/FAC/014';
+        : 'LIAH/FAC/014';
 
     return Container(
       color: AppColors.navyDeep,
@@ -6069,7 +6069,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                   Row(
                     children: [
                       const Text(
-                        'FAH ACADEMY',
+                        'LIAH ACADEMY',
                         style: TextStyle(
                           color: AppColors.onNavy,
                           fontSize: 13,
@@ -6253,7 +6253,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         : 'Dr. Raymond Vance';
     final facultyId = data.userId.isNotEmpty && data.userId != 'LC-2026-001'
         ? data.userId
-        : 'FAH-FAC-014';
+        : 'LIAH-FAC-014';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
@@ -7139,7 +7139,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
 
   Widget _buildFacultyGradesTab(DashboardData data) {
     // Generate list of 5 students based on Screenshot 2
-    final divineExam = _customExamScores['FAH-2026-SV0390'];
+    final divineExam = _customExamScores['LIAH-2026-SV0390'];
     final divineHasExam = divineExam != null;
     final divineTotal = divineHasExam ? (18.0 + divineExam) : null;
     final divineGrade = divineHasExam ? (divineTotal! >= 80 ? 'A' : (divineTotal >= 70 ? 'B+' : 'C')) : null;
@@ -7149,7 +7149,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       const _FacultyStudentGradeModel(
         initials: 'BN',
         name: 'Brenda N. Tabi',
-        matricule: 'FAH-2026-SV0482',
+        matricule: 'LIAH-2026-SV0482',
         status: 'PASSED',
         caScore: 24.5,
         examScore: 56.0,
@@ -7161,7 +7161,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       const _FacultyStudentGradeModel(
         initials: 'EK',
         name: 'Emmanuel K. Che',
-        matricule: 'FAH-2026-SV0419',
+        matricule: 'LIAH-2026-SV0419',
         status: 'PASSED',
         caScore: 21.0,
         examScore: 49.0,
@@ -7173,7 +7173,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       _FacultyStudentGradeModel(
         initials: 'DA',
         name: 'Divine F. Ayuk',
-        matricule: 'FAH-2026-SV0390',
+        matricule: 'LIAH-2026-SV0390',
         status: divineHasExam ? 'PASSED' : 'INCOMPLETE',
         caScore: 18.0,
         examScore: divineExam,
@@ -7187,7 +7187,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       const _FacultyStudentGradeModel(
         initials: 'MN',
         name: 'Marcelle O. Ndong',
-        matricule: 'FAH-2026-SV0532',
+        matricule: 'LIAH-2026-SV0532',
         status: 'RESIT REQUIRED',
         caScore: 12.0,
         examScore: 24.0,
@@ -7199,7 +7199,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       const _FacultyStudentGradeModel(
         initials: 'BE',
         name: 'Boris T. Enow',
-        matricule: 'FAH-2026-SV0441',
+        matricule: 'LIAH-2026-SV0441',
         status: 'DISTINCTION',
         caScore: 26.0,
         examScore: 59.5,
@@ -7737,11 +7737,11 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
 
   Widget _buildFacultyAttendanceTab(DashboardData data) {
     final students = [
-      {'name': 'Brenda N. Tabi', 'mat': 'FAH-2026-SV0482', 'default': 'present'},
-      {'name': 'Emmanuel K. Che', 'mat': 'FAH-2026-SV0419', 'default': 'present'},
-      {'name': 'Divine F. Ayuk', 'mat': 'FAH-2026-SV0390', 'default': 'late'},
-      {'name': 'Marcelle O. Ndong', 'mat': 'FAH-2026-SV0532', 'default': 'absent'},
-      {'name': 'Boris T. Enow', 'mat': 'FAH-2026-SV0441', 'default': 'present'},
+      {'name': 'Brenda N. Tabi', 'mat': 'LIAH-2026-SV0482', 'default': 'present'},
+      {'name': 'Emmanuel K. Che', 'mat': 'LIAH-2026-SV0419', 'default': 'present'},
+      {'name': 'Divine F. Ayuk', 'mat': 'LIAH-2026-SV0390', 'default': 'late'},
+      {'name': 'Marcelle O. Ndong', 'mat': 'LIAH-2026-SV0532', 'default': 'absent'},
+      {'name': 'Boris T. Enow', 'mat': 'LIAH-2026-SV0441', 'default': 'present'},
     ];
 
     // Lecturer Course-Level Authorization Check:
@@ -7750,8 +7750,8 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
     final courseInstructor = (_selectedAttendanceCourseCode == 'SWE201' || _selectedAttendanceCourseCode == 'SWE101')
         ? 'Dr. Raymond Vance (You)'
         : (_selectedAttendanceCourseCode == 'CEF205'
-            ? 'Dr. Beatrice M. Ngu (Staff ID: FAH-FAC-008)'
-            : 'Prof. Samuel E. Mbella (Staff ID: FAH-FAC-003)');
+            ? 'Dr. Beatrice M. Ngu (Staff ID: LIAH-FAC-008)'
+            : 'Prof. Samuel E. Mbella (Staff ID: LIAH-FAC-003)');
 
     final courseTitle = _selectedAttendanceCourseCode == 'SWE201'
         ? 'Advanced Data Structures'
@@ -9114,7 +9114,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                   Row(
                     children: [
                       const Text(
-                        'FAH ACADEMY',
+                        'LIAH ACADEMY',
                         style: TextStyle(
                           color: AppColors.onNavy,
                           fontSize: 13,
@@ -9314,7 +9314,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                         const SizedBox(height: 2),
                         Text(
                           isSuper
-                              ? 'FAH ACADEMY SUPER ADMIN CONSOLE • 2026/2027'
+                              ? 'LIAH ACADEMY SUPER ADMIN CONSOLE • 2026/2027'
                               : 'REGISTRY & ACADEMIC OPERATIONS • 2026/2027',
                           style: const TextStyle(
                             color: AppColors.gold,
@@ -9718,7 +9718,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
     final students = [
       const _AdminStudentRecord(
         name: 'Marcelle O. Ndong',
-        matricule: 'FAH/24/SWE/0891',
+        matricule: 'LIAH/24/SWE/0891',
         level: 'Level 200 (Year 2)',
         program: 'B.Sc Software Engineering',
         feeStatus: 'Cleared',
@@ -9729,7 +9729,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Divine F. Ayuk',
-        matricule: 'FAH/24/SWE/0482',
+        matricule: 'LIAH/24/SWE/0482',
         level: 'Level 200 (Year 2)',
         program: 'B.Sc Software Engineering',
         feeStatus: 'Installment 1 Cleared',
@@ -9740,7 +9740,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Bryan K. Tabe',
-        matricule: 'FAH/24/CEF/0122',
+        matricule: 'LIAH/24/CEF/0122',
         level: 'Level 100 (Year 1)',
         program: 'B.Eng Computer Engineering',
         feeStatus: 'Cleared',
@@ -9751,7 +9751,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Brenda N. Fomukong',
-        matricule: 'FAH/24/ICT/0319',
+        matricule: 'LIAH/24/ICT/0319',
         level: 'Level 300 (Year 3)',
         program: 'B.Sc Information Systems',
         feeStatus: 'Cleared',
@@ -9762,7 +9762,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Kelly C. Enow',
-        matricule: 'FAH/24/SWE/0712',
+        matricule: 'LIAH/24/SWE/0712',
         level: 'Level 200 (Year 2)',
         program: 'B.Sc Software Engineering',
         feeStatus: 'Cleared',
@@ -9773,7 +9773,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Samuel T. Mbarga',
-        matricule: 'FAH/24/ICT/0401',
+        matricule: 'LIAH/24/ICT/0401',
         level: 'Level 100 (Year 1)',
         program: 'B.Sc ICT Fundamentals',
         feeStatus: 'Unpaid',
@@ -9784,7 +9784,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Christelle M. Bih',
-        matricule: 'FAH/24/CEF/0204',
+        matricule: 'LIAH/24/CEF/0204',
         level: 'Level 200 (Year 2)',
         program: 'B.Eng Computer Engineering',
         feeStatus: 'Cleared',
@@ -9795,7 +9795,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       ),
       const _AdminStudentRecord(
         name: 'Alain P. Kamga',
-        matricule: 'FAH/24/SWE/0914',
+        matricule: 'LIAH/24/SWE/0914',
         level: 'Level 400 (Year 4)',
         program: 'B.Sc Software Engineering',
         feeStatus: 'Cleared',
@@ -9871,7 +9871,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
           child: TextField(
             style: const TextStyle(color: AppColors.onNavy, fontSize: 13),
             decoration: InputDecoration(
-              hintText: 'Search by student name or matricule (e.g. FAH/24/SWE/0891)...',
+              hintText: 'Search by student name or matricule (e.g. LIAH/24/SWE/0891)...',
               hintStyle: const TextStyle(color: AppColors.muted, fontSize: 12),
               prefixIcon: const Icon(Icons.search, color: AppColors.gold, size: 20),
               suffixIcon: _adminDirectorySearchQuery.isNotEmpty
@@ -10137,7 +10137,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                     ),
                     const SizedBox(width: 8),
                     const Text(
-                      'FAH ACADEMY BURSARY',
+                      'LIAH ACADEMY BURSARY',
                       style: TextStyle(
                         color: AppColors.onNavy,
                         fontSize: 12,
@@ -10427,7 +10427,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                             ),
                             const SizedBox(height: 2),
                             const Text(
-                              'FAH-2024-SW0467 • B.Eng S.W. (Level 200)',
+                              'LIAH-2024-SW0467 • B.Eng S.W. (Level 200)',
                               style: TextStyle(color: AppColors.muted, fontSize: 11),
                             ),
                           ],
@@ -10682,7 +10682,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
 
             _buildQueueItem(
               studentName: 'Boris T. Enow',
-              matricule: 'FAH-2024-SW0441 • Level 200',
+              matricule: 'LIAH-2024-SW0441 • Level 200',
               amount: '150,000 XAF',
               bankName: 'UBA Buea Branch',
               slipId: 'UBA-44812',
@@ -10691,7 +10691,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
             ),
             _buildQueueItem(
               studentName: 'Cynthia K. Mbah',
-              matricule: 'FAH-2024-CE0119 • Level 300',
+              matricule: 'LIAH-2024-CE0119 • Level 300',
               amount: '200,000 XAF',
               bankName: 'Afriland First Bank',
               slipId: 'AFB-90114',
@@ -10700,7 +10700,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
             ),
             _buildQueueItem(
               studentName: 'Marcelle O. Ndong',
-              matricule: 'FAH-2024-SW0532 • Level 200',
+              matricule: 'LIAH-2024-SW0532 • Level 200',
               amount: '120,000 XAF',
               bankName: 'Orange Money Cameroun',
               slipId: 'OM-77120',
@@ -10710,7 +10710,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
             ),
             _buildQueueItem(
               studentName: 'Divine F. Ayuk',
-              matricule: 'FAH-2024-SW0390 • Level 200',
+              matricule: 'LIAH-2024-SW0390 • Level 200',
               amount: '75,000 XAF',
               bankName: 'MTN Cameroon MoMo',
               slipId: 'MOMO-55219',
@@ -10997,7 +10997,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'CM-MOMO-892144',
         date: 'Oct 19, 2026',
         studentName: 'Marcelle O. Ndong',
-        matricule: 'FAH/24/SWE/0891',
+        matricule: 'LIAH/24/SWE/0891',
         channel: 'MTN Cameroon MoMo',
         amount: 250000,
         status: 'Verified & Cleared',
@@ -11006,7 +11006,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'OM-DLA-338192',
         date: 'Oct 18, 2026',
         studentName: 'Divine F. Ayuk',
-        matricule: 'FAH/24/SWE/0482',
+        matricule: 'LIAH/24/SWE/0482',
         channel: 'Orange Money Cameroun',
         amount: 300000,
         status: 'Verified & Cleared',
@@ -11015,7 +11015,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'UBA-YDE-049182',
         date: 'Oct 16, 2026',
         studentName: 'Bryan K. Tabe',
-        matricule: 'FAH/24/CEF/0122',
+        matricule: 'LIAH/24/CEF/0122',
         channel: 'UBA Cameroon Deposit',
         amount: 450000,
         status: 'Verified & Cleared',
@@ -11024,7 +11024,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'AFB-6629104',
         date: 'Oct 15, 2026',
         studentName: 'Brenda N. Fomukong',
-        matricule: 'FAH/24/ICT/0319',
+        matricule: 'LIAH/24/ICT/0319',
         channel: 'Afriland First Bank Wire',
         amount: 500000,
         status: 'Verified & Cleared',
@@ -11033,7 +11033,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'CM-MOMO-901452',
         date: 'Oct 20, 2026',
         studentName: 'Christelle M. Bih',
-        matricule: 'FAH/24/CEF/0204',
+        matricule: 'LIAH/24/CEF/0204',
         channel: 'MTN Cameroon MoMo',
         amount: 250000,
         status: 'Pending Clearance',
@@ -11042,7 +11042,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
         txId: 'OM-BUEA-11029',
         date: 'Oct 20, 2026',
         studentName: 'Kelly C. Enow',
-        matricule: 'FAH/24/SWE/0712',
+        matricule: 'LIAH/24/SWE/0712',
         channel: 'Orange Money Cameroun',
         amount: 200000,
         status: 'Pending Clearance',
@@ -11571,7 +11571,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
           style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         content: const Text(
-          'To enrol a student and assign an official matricule (e.g. FAH/24/SWE/xxxx), register the applicant through the official Cameroon admissions portal or run the database migration script.',
+          'To enrol a student and assign an official matricule (e.g. LIAH/24/SWE/xxxx), register the applicant through the official Cameroon admissions portal or run the database migration script.',
           style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4),
         ),
         actions: [

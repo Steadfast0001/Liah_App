@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:liah_app/dashboard_data.dart';
 
 void main() {
-  group('Fah Academy RBAC — Role Mapping & Dashboard Data Tests', () {
+  group('Liah Academy RBAC — Role Mapping & Dashboard Data Tests', () {
     test('DashboardRoleLabel maps strings to roles accurately', () {
       expect(DashboardRoleLabel.fromString('super_admin'), DashboardRole.superAdmin);
       expect(DashboardRoleLabel.fromString('superadmin'), DashboardRole.superAdmin);
