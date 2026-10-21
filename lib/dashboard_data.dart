@@ -222,11 +222,11 @@ class SupabaseDashboardRepository implements DashboardRepository {
 
     if (matriculeOrId.isEmpty) {
       matriculeOrId = switch (role) {
-        DashboardRole.superAdmin => 'SA-2026-001',
-        DashboardRole.admin => 'AD-2026-001',
-        DashboardRole.teacher => 'LC-2026-001',
-        DashboardRole.student => 'LA-2026-SW-001',
-        DashboardRole.parent => 'PR-2026-001',
+        DashboardRole.superAdmin => 'FAH/DIR/001',
+        DashboardRole.admin => 'FAH/REG/002',
+        DashboardRole.teacher => 'FAH/FAC/014',
+        DashboardRole.student => 'FAH/24/SWE/0891',
+        DashboardRole.parent => 'FAH/PAR/001',
       };
     }
 

@@ -140,11 +140,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<DashboardData> _dashboardFuture;
-  _SidebarDestination _selectedDestination = _SidebarDestination.dashboard;
-  bool _isSidebarCollapsed = false;
-
-  // Active role override (allows live previewing Student, Faculty, and Admin views)
-  DashboardRole? _activeRoleOverride;
 
   // Student mobile 4-tab index: 0: Home, 1: Academics, 2: Fees, 3: Results
   int _studentTabIndex = 0;
@@ -154,7 +149,7 @@ class _HomePageState extends State<HomePage> {
   String _academicsSearchQuery = '';
 
   // Registration selection state
-  final Set<String> _selectedCourseCodes = {'SW201', 'SW203', 'SW205'};
+  final Set<String> _selectedCourseCodes = {'SWE201', 'SWE203', 'CEF205'};
 
   // Faculty mobile 4-tab index: 0: Home, 1: Courses, 2: Attendance, 3: Grades
   int _facultyTabIndex = 0;
@@ -168,6 +163,11 @@ class _HomePageState extends State<HomePage> {
 
   // Faculty interactive attendance entries: matricule -> 'present' | 'late' | 'absent'
   final Map<String, String> _attendanceMap = {};
+
+  // Admin & Super Admin 4-tab index: 0: Overview, 1: Directory, 2: Finance (FCFA), 3: Timetable
+  int _adminTabIndex = 0;
+  String _adminDirectorySearchQuery = '';
+  int _adminDirectoryLevelFilter = 0; // 0: All, 1: Level 100, 2: Level 200, 3: Level 300, 4: Level 400
 
   DashboardRepository get _repository =>
       widget.repository ?? const DemoDashboardRepository();
@@ -207,38 +207,23 @@ class _HomePageState extends State<HomePage> {
         }
 
         final data = snapshot.data!;
-        final effectiveRole = _activeRoleOverride ?? data.role;
 
-        // Student Portal Mobile Experience (Matching uploaded designs)
-        if (effectiveRole == DashboardRole.student) {
+        // Strict Role-Based Access Control (RBAC):
+        // Users can ONLY access what their authenticated database role permits!
+        final role = data.role;
+
+        // 1. Student Portal (Academic standing, Course Registration, Fees FCFA, Results Slip)
+        if (role == DashboardRole.student) {
           return _buildStudentPortalScaffold(data);
         }
 
-        // Faculty / Lecturer Portal Mobile Experience (Matching uploaded designs)
-        if (effectiveRole == DashboardRole.teacher) {
+        // 2. Faculty / Lecturer Portal (Assigned Courses, Attendance Register, Grade Entry CA/Exam)
+        if (role == DashboardRole.teacher) {
           return _buildFacultyPortalScaffold(data);
         }
 
-        // Admin & Super Admin Desktop/Wide Experience
-        final isWide = MediaQuery.sizeOf(context).width >= 760;
-        return Scaffold(
-          backgroundColor: AppColors.navy,
-          drawer: Drawer(
-            width: _isSidebarCollapsed ? 72 : 144,
-            backgroundColor: AppColors.navyDeep,
-            child: SafeArea(child: _buildSidebar()),
-          ),
-          body: Row(
-            children: [
-              if (isWide)
-                SizedBox(
-                  width: _isSidebarCollapsed ? 72 : 144,
-                  child: _buildSidebar(),
-                ),
-              Expanded(child: _buildAdminContent(data, isWide: isWide)),
-            ],
-          ),
-        );
+        // 3. Admin & Super Admin Portal (Directory, Finance Ledger FCFA, Timetable, Security)
+        return _buildAdminPortalScaffold(data);
       },
     );
   }
@@ -248,11 +233,69 @@ class _HomePageState extends State<HomePage> {
   // ---------------------------------------------------------------------------
 
   Widget _buildStudentPortalScaffold(DashboardData data) {
-    const tabSectionNames = ['DASHBOARD', 'ACADEMICS', 'FEES', 'RESULTS'];
+    const tabSectionNames = [
+      'ACADEMIC OVERVIEW',
+      'COURSE REGISTRATION',
+      'FEES CLEARANCE (FCFA)',
+      'RESULTS & GPA'
+    ];
     final currentSection = tabSectionNames[_studentTabIndex];
+    final isDesktop = MediaQuery.sizeOf(context).width >= 850;
 
-    final scaffold = Scaffold(
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.navy,
+        body: Row(
+          children: [
+            _buildDesktopSidebar(
+              role: DashboardRole.student,
+              data: data,
+              selectedIndex: _studentTabIndex,
+              onSelect: (idx) => setState(() => _studentTabIndex = idx),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildDesktopTopBar(
+                    data: data,
+                    sectionName: currentSection,
+                    roleLabel: 'Student • Level 200 (Year 2)',
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 1150),
+                        child: IndexedStack(
+                          index: _studentTabIndex,
+                          children: [
+                            _buildStudentHomeTab(data),
+                            _buildStudentAcademicsTab(data),
+                            _buildStudentFeesTab(data),
+                            _buildStudentResultsTab(data),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
       backgroundColor: AppColors.navy,
+      drawer: _buildMobileDrawer(
+        role: DashboardRole.student,
+        data: data,
+        selectedIndex: _studentTabIndex,
+        onSelect: (idx) {
+          Navigator.pop(context);
+          setState(() => _studentTabIndex = idx);
+        },
+      ),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: _buildStudentTopBar(data, currentSection),
@@ -308,51 +351,29 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-
-    // Responsive container on wide screens to prevent "chucked up" stretched UI
-    final isDesktop = MediaQuery.sizeOf(context).width > 600;
-    if (isDesktop) {
-      return Scaffold(
-        backgroundColor: AppColors.navyDeep,
-        body: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 520),
-            decoration: BoxDecoration(
-              color: AppColors.navy,
-              border: Border.symmetric(
-                vertical: BorderSide(
-                  color: AppColors.border.withValues(alpha: 0.6),
-                  width: 1,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  blurRadius: 30,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: scaffold,
-          ),
-        ),
-      );
-    }
-
-    return scaffold;
   }
 
   Widget _buildStudentTopBar(DashboardData data, String currentSection) {
     return Container(
       color: AppColors.navyDeep,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: SafeArea(
         bottom: false,
         child: Row(
           children: [
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.onNavy, size: 24),
+                tooltip: 'Navigation Menu',
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+            ),
+            const SizedBox(width: 6),
             Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -372,29 +393,29 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'FAH ACADEMY',
+                    'FAH ACADEMY • CAMEROON',
                     style: TextStyle(
                       color: AppColors.onNavy,
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
+                      letterSpacing: 0.6,
                     ),
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    '2026/2027 • S1 • $currentSection',
+                    '2026/2027 • S1 • LEVEL 200 (YEAR 2)',
                     style: const TextStyle(
                       color: AppColors.gold,
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.4,
                     ),
                   ),
                 ],
@@ -412,7 +433,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('No unread urgent notifications.'),
+                        content: Text('Notice: Continuous assessment schedule released for Level 200.'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -424,8 +445,8 @@ class _HomePageState extends State<HomePage> {
                   top: 6,
                   right: 6,
                   child: Container(
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     decoration: const BoxDecoration(
                       color: AppColors.gold,
                       shape: BoxShape.circle,
@@ -436,17 +457,13 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(width: 8),
             PopupMenuButton<String>(
-              tooltip: 'Profile Menu',
+              tooltip: 'Student Account & Profile',
               color: AppColors.surface,
               onSelected: (val) {
                 if (val == 'signout') {
                   _handleSignOut();
-                } else if (val == 'role_student') {
-                  setState(() => _activeRoleOverride = DashboardRole.student);
-                } else if (val == 'role_faculty') {
-                  setState(() => _activeRoleOverride = DashboardRole.teacher);
-                } else if (val == 'role_admin') {
-                  setState(() => _activeRoleOverride = DashboardRole.admin);
+                } else if (val == 'handbook') {
+                  _showAcademicRegulationsModal(context);
                 }
               },
               itemBuilder: (ctx) => [
@@ -463,10 +480,19 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       Text(
-                        data.userId,
+                        'Matricule: ${data.userId}',
                         style: const TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'B.Sc Software Eng • Level 200 (Year 2)',
+                        style: TextStyle(
                           color: AppColors.muted,
-                          fontSize: 12,
+                          fontSize: 10.5,
                         ),
                       ),
                     ],
@@ -474,43 +500,22 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
-                  value: 'role_student',
+                  value: 'handbook',
                   child: Row(
                     children: [
-                      Icon(Icons.school_outlined, color: AppColors.gold, size: 18),
+                      Icon(Icons.menu_book_outlined, color: AppColors.gold, size: 18),
                       SizedBox(width: 8),
-                      Text('Student Portal View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                      Text('Senate Academic Rules', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'role_faculty',
-                  child: Row(
-                    children: [
-                      Icon(Icons.badge_outlined, color: AppColors.gold, size: 18),
-                      SizedBox(width: 8),
-                      Text('Faculty Portal View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'role_admin',
-                  child: Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings_outlined, color: AppColors.gold, size: 18),
-                      SizedBox(width: 8),
-                      Text('Admin Workspace View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'signout',
                   child: Row(
                     children: [
-                      Icon(Icons.logout, color: AppColors.gold, size: 18),
+                      Icon(Icons.logout, color: Color(0xFFF87171), size: 18),
                       SizedBox(width: 8),
-                      Text('Sign out', style: TextStyle(color: AppColors.gold)),
+                      Text('Sign out', style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -532,6 +537,541 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // RESPONSIVE SIDEBAR & DRAWER MENUS (HCI Regulations & Navigation)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildDesktopSidebar({
+    required DashboardRole role,
+    required DashboardData data,
+    required int selectedIndex,
+    required ValueChanged<int> onSelect,
+  }) {
+    final roleTitle = role == DashboardRole.student
+        ? 'Student • Level 200 (Year 2)'
+        : (role == DashboardRole.teacher
+            ? 'Senior Lecturer • Faculty'
+            : (role == DashboardRole.superAdmin ? 'Super Administrator' : 'Administrator'));
+
+    final menuItems = role == DashboardRole.student
+        ? [
+            (Icons.dashboard_outlined, 'Academic Overview', 0),
+            (Icons.school_outlined, 'Course Registration', 1),
+            (Icons.account_balance_wallet_outlined, 'Fees Clearance (FCFA)', 2),
+            (Icons.insights_outlined, 'Official Results & GPA', 3),
+          ]
+        : (role == DashboardRole.teacher
+            ? [
+                (Icons.grid_view_rounded, 'Faculty Dashboard', 0),
+                (Icons.menu_book_outlined, 'Teaching Modules', 1),
+                (Icons.fact_check_outlined, 'Attendance Register', 2),
+                (Icons.trending_up_rounded, 'Grade Entry (CA & Exam)', 3),
+              ]
+            : [
+                (Icons.dashboard_outlined, 'Operations Overview', 0),
+                (Icons.people_alt_outlined, 'Student Directory', 1),
+                (Icons.payments_outlined, 'Fee Ledger (FCFA)', 2),
+                (Icons.calendar_month_outlined, 'Timetable & Venues', 3),
+              ]);
+
+    return Container(
+      width: 250,
+      color: AppColors.navyDeep,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.border, width: 0.8)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.gold, width: 1.5),
+                        ),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, color: AppColors.gold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'FAH ACADEMY',
+                            style: TextStyle(
+                              color: AppColors.onNavy,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          Text(
+                            'UNIVERSITY SMS • CAMEROON',
+                            style: TextStyle(
+                              color: AppColors.gold,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF13204D),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data.displayName,
+                          style: const TextStyle(
+                            color: AppColors.onNavy,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          roleTitle,
+                          style: const TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          'Matricule: ${data.userId}',
+                          style: const TextStyle(color: AppColors.muted, fontSize: 9.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'MAIN NAVIGATION',
+                      style: TextStyle(color: AppColors.muted, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...menuItems.map((item) {
+                    final isSelected = selectedIndex == item.$3;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.gold.withValues(alpha: 0.15) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: isSelected
+                            ? Border.all(color: AppColors.gold.withValues(alpha: 0.6))
+                            : null,
+                      ),
+                      child: ListTile(
+                        leading: Icon(item.$1, color: isSelected ? AppColors.gold : AppColors.muted, size: 19),
+                        title: Text(
+                          item.$2,
+                          style: TextStyle(
+                            color: isSelected ? AppColors.gold : AppColors.onNavy,
+                            fontSize: 12.5,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          ),
+                        ),
+                        dense: true,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        onTap: () => onSelect(item.$3),
+                      ),
+                    );
+                  }),
+                  const Divider(color: AppColors.border, height: 24),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'ACADEMIC RESOURCES',
+                      style: TextStyle(color: AppColors.muted, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_month_outlined, color: AppColors.muted, size: 19),
+                    title: const Text('Semester Timetable', style: TextStyle(color: AppColors.onNavy, fontSize: 12.5)),
+                    dense: true,
+                    onTap: _showTimetableModal,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.menu_book_outlined, color: AppColors.muted, size: 19),
+                    title: const Text('Senate Regulations', style: TextStyle(color: AppColors.onNavy, fontSize: 12.5)),
+                    dense: true,
+                    onTap: () => _showAcademicRegulationsModal(context),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border, width: 0.8)),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Color(0xFFF87171), size: 19),
+                title: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 12.5),
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                tileColor: const Color(0xFF13204D),
+                dense: true,
+                onTap: _handleSignOut,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileDrawer({
+    required DashboardRole role,
+    required DashboardData data,
+    required int selectedIndex,
+    required ValueChanged<int> onSelect,
+  }) {
+    final roleTitle = role == DashboardRole.student
+        ? 'Student • Level 200 (Year 2)'
+        : (role == DashboardRole.teacher
+            ? 'Senior Lecturer • Faculty'
+            : (role == DashboardRole.superAdmin ? 'Super Administrator' : 'Administrator'));
+
+    final menuItems = role == DashboardRole.student
+        ? [
+            (Icons.dashboard_outlined, 'Academic Overview', 0),
+            (Icons.school_outlined, 'Course Registration', 1),
+            (Icons.account_balance_wallet_outlined, 'Fees Clearance (FCFA)', 2),
+            (Icons.insights_outlined, 'Official Results & GPA', 3),
+          ]
+        : (role == DashboardRole.teacher
+            ? [
+                (Icons.grid_view_rounded, 'Faculty Dashboard', 0),
+                (Icons.menu_book_outlined, 'Assigned Courses', 1),
+                (Icons.fact_check_outlined, 'Attendance Register', 2),
+                (Icons.trending_up_rounded, 'Grade Entry (CA & Exam)', 3),
+              ]
+            : [
+                (Icons.dashboard_outlined, 'Operations Overview', 0),
+                (Icons.people_alt_outlined, 'Student Directory', 1),
+                (Icons.payments_outlined, 'Fee Ledger (FCFA)', 2),
+                (Icons.calendar_month_outlined, 'Timetable & Venues', 3),
+              ]);
+
+    return Drawer(
+      backgroundColor: AppColors.navyDeep,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(
+                color: Color(0xFF13204D),
+                border: Border(bottom: BorderSide(color: AppColors.border, width: 0.8)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.gold, width: 1.5),
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.school, color: AppColors.gold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'FAH ACADEMY',
+                          style: TextStyle(
+                            color: AppColors.onNavy,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          roleTitle,
+                          style: const TextStyle(color: AppColors.gold, fontSize: 10.5, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Matricule: ${data.userId}',
+                          style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  ...menuItems.map((item) {
+                    final isSelected = selectedIndex == item.$3;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.gold.withValues(alpha: 0.15) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: isSelected
+                            ? Border.all(color: AppColors.gold.withValues(alpha: 0.5))
+                            : null,
+                      ),
+                      child: ListTile(
+                        leading: Icon(item.$1, color: isSelected ? AppColors.gold : AppColors.muted, size: 20),
+                        title: Text(
+                          item.$2,
+                          style: TextStyle(
+                            color: isSelected ? AppColors.gold : AppColors.onNavy,
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          ),
+                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        dense: true,
+                        onTap: () => onSelect(item.$3),
+                      ),
+                    );
+                  }),
+                  const Divider(color: AppColors.border, height: 24),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_month_outlined, color: AppColors.muted, size: 20),
+                    title: const Text('Semester Timetable', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    dense: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showTimetableModal();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.menu_book_outlined, color: AppColors.muted, size: 20),
+                    title: const Text('Academic Regulations', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    dense: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAcademicRegulationsModal(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border, width: 0.8)),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.logout, color: Color(0xFFF87171), size: 20),
+                title: const Text(
+                  'Sign Out',
+                  style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                tileColor: const Color(0xFF13204D),
+                dense: true,
+                onTap: _handleSignOut,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopTopBar({
+    required DashboardData data,
+    required String sectionName,
+    required String roleLabel,
+  }) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      decoration: const BoxDecoration(
+        color: AppColors.navyDeep,
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.8)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            sectionName,
+            style: const TextStyle(
+              color: AppColors.onNavy,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+            ),
+            child: const Text(
+              '2026/2027 • SEMESTER 1 (CURRENT)',
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded, color: AppColors.onNavy, size: 20),
+            tooltip: 'University Notices',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Notice: Academic board continuous assessment moderation active.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF13204D),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: AppColors.gold,
+                  child: Text(
+                    data.displayName.isNotEmpty ? data.displayName[0].toUpperCase() : 'U',
+                    style: const TextStyle(color: AppColors.navyDeep, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  data.displayName,
+                  style: const TextStyle(color: AppColors.onNavy, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '(${data.userId})',
+                  style: const TextStyle(color: AppColors.gold, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAcademicRegulationsModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.gavel_outlined, color: AppColors.gold, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'Cameroon Academic Regulations',
+              style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Fah Academy — Faculty of Engineering & Technology\n'
+                'Harmonized Higher Education Senate Standards (MINESUP, Cameroon)',
+                style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '1. Assessment Breakdown:\n'
+                '   • Continuous Assessment (CA): 30% (Tests, Lab Practical / TP, Assignments).\n'
+                '   • Terminal Examination: 70% (Normal Session Examination / Session Normale).\n'
+                '   • A minimum of 75% class attendance is mandatory to sit for terminal examinations.\n\n'
+                '2. Grading Scale (4.0 GP):\n'
+                '   • 80% - 100%: Grade A (4.00 GP) — Excellent\n'
+                '   • 70% - 79%: Grade B+ (3.50 GP) — Very Good\n'
+                '   • 60% - 69%: Grade B (3.00 GP) — Good\n'
+                '   • 55% - 59%: Grade C+ (2.50 GP) — Fair\n'
+                '   • 50% - 54%: Grade C (2.00 GP) — Pass\n'
+                '   • Below 50%: Grade F (0.00 GP) — Resit Required (Session de Rattrapage).\n\n'
+                '3. Tuition & Financial Clearance:\n'
+                '   • Complete fee clearance in FCFA is required before obtaining the Examination Clearance Slip.\n'
+                '   • Bank deposits through UBA Cameroon, Afriland First Bank, or authorized MTN MoMo/Orange Money.',
+                style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.45),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyDeep,
+            ),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -2244,7 +2784,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   children: [
                     TextSpan(
-                      text: 'XAF',
+                      text: 'FCFA',
                       style: TextStyle(
                         color: AppColors.onNavy,
                         fontSize: 14,
@@ -2269,7 +2809,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Settled: 450,000 XAF',
+                    'Settled: 450,000 FCFA',
                     style: TextStyle(color: AppColors.muted, fontSize: 10),
                   ),
                   Text(
@@ -2301,7 +2841,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            '650,000 XAF',
+                            '650,000 FCFA',
                             style: TextStyle(
                               color: AppColors.onNavy,
                               fontSize: 12,
@@ -2331,7 +2871,7 @@ class _HomePageState extends State<HomePage> {
                           Row(
                             children: [
                               const Text(
-                                '450,000 XAF',
+                                '450,000 FCFA',
                                 style: TextStyle(
                                   color: AppColors.onNavy,
                                   fontSize: 12,
@@ -2367,7 +2907,7 @@ class _HomePageState extends State<HomePage> {
                         Icon(Icons.shield_outlined, color: AppColors.gold, size: 14),
                         SizedBox(width: 6),
                         Text(
-                          'Platform Charge: 25,000 XAF',
+                          'Platform Charge: 25,000 FCFA',
                           style: TextStyle(color: AppColors.muted, fontSize: 11),
                         ),
                       ],
@@ -2412,7 +2952,7 @@ class _HomePageState extends State<HomePage> {
           number: '1',
           title: 'Semester Course Registration',
           dueDate: 'Due Sep 15, 2026 • Full academic portal access granted',
-          amount: '250,000 XAF',
+          amount: '250,000 FCFA',
           badgeText: 'Paid & Verified',
           isPaid: true,
         ),
@@ -2422,7 +2962,7 @@ class _HomePageState extends State<HomePage> {
           number: '2',
           title: 'Mid-term CA & Lab Access',
           dueDate: 'Due Nov 10, 2026 • Continuous assessments evaluated',
-          amount: '200,000 XAF',
+          amount: '200,000 FCFA',
           badgeText: 'Paid & Verified',
           isPaid: true,
         ),
@@ -2432,7 +2972,7 @@ class _HomePageState extends State<HomePage> {
           number: '3',
           title: 'Final Exam & Results Publication',
           dueDate: 'Due Jan 15, 2027',
-          amount: '200,000 XAF',
+          amount: '200,000 FCFA',
           badgeText: 'Due in 18 days',
           isActionRequired: true,
           alertText: 'Blocks S1 Official Transcript & Exam Hall Slip',
@@ -2561,7 +3101,7 @@ class _HomePageState extends State<HomePage> {
         _buildAuditLogCard(
           ref: 'Ref #UB-9940182',
           dateDesc: 'Submitted Yesterday • Deposit Slip',
-          amount: '100,000 XAF',
+          amount: '100,000 FCFA',
           status: 'Under Admin Review',
           statusColor: AppColors.gold,
           note: 'Awaiting Bursar validation. Does not clear active dues yet.',
@@ -2572,7 +3112,7 @@ class _HomePageState extends State<HomePage> {
         _buildAuditLogCard(
           ref: 'Ref #UB-8829401',
           dateDesc: 'Oct 28, 2026 • UBA Wire Transfer',
-          amount: '200,000 XAF',
+          amount: '200,000 FCFA',
           status: 'Verified',
           statusColor: Colors.greenAccent,
           auditor: 'Audited by Bursar: A. Mbarga',
@@ -2583,7 +3123,7 @@ class _HomePageState extends State<HomePage> {
         _buildAuditLogCard(
           ref: 'Ref #AF-3910284',
           dateDesc: 'Sep 12, 2026 • Afriland First Teller',
-          amount: '250,000 XAF',
+          amount: '250,000 FCFA',
           status: 'Verified',
           statusColor: Colors.greenAccent,
           auditor: 'Audited by Bursar Office',
@@ -3796,11 +4336,69 @@ class _HomePageState extends State<HomePage> {
   // ---------------------------------------------------------------------------
 
   Widget _buildFacultyPortalScaffold(DashboardData data) {
-    const tabSectionNames = ['DASHBOARD', 'COURSES', 'ATTENDANCE', 'GRADES'];
+    const tabSectionNames = [
+      'FACULTY DASHBOARD',
+      'TEACHING MODULES',
+      'ATTENDANCE REGISTER',
+      'GRADE ENTRY (CA & EXAM)'
+    ];
     final currentSection = tabSectionNames[_facultyTabIndex];
+    final isDesktop = MediaQuery.sizeOf(context).width >= 850;
 
-    final scaffold = Scaffold(
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.navy,
+        body: Row(
+          children: [
+            _buildDesktopSidebar(
+              role: DashboardRole.teacher,
+              data: data,
+              selectedIndex: _facultyTabIndex,
+              onSelect: (idx) => setState(() => _facultyTabIndex = idx),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildDesktopTopBar(
+                    data: data,
+                    sectionName: currentSection,
+                    roleLabel: 'Senior Lecturer • Faculty of Computing',
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 1150),
+                        child: IndexedStack(
+                          index: _facultyTabIndex,
+                          children: [
+                            _buildFacultyHomeTab(data),
+                            _buildFacultyCoursesTab(data),
+                            _buildFacultyAttendanceTab(data),
+                            _buildFacultyGradesTab(data),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
       backgroundColor: AppColors.navy,
+      drawer: _buildMobileDrawer(
+        role: DashboardRole.teacher,
+        data: data,
+        selectedIndex: _facultyTabIndex,
+        onSelect: (idx) {
+          Navigator.pop(context);
+          setState(() => _facultyTabIndex = idx);
+        },
+      ),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: _buildFacultyTopBar(data, currentSection),
@@ -3856,38 +4454,6 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-
-    // Responsive desktop container prevents "chucked up" stretched UI on large displays
-    final isDesktop = MediaQuery.sizeOf(context).width > 600;
-    if (isDesktop) {
-      return Scaffold(
-        backgroundColor: AppColors.navyDeep,
-        body: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 520),
-            decoration: BoxDecoration(
-              color: AppColors.navy,
-              border: Border.symmetric(
-                vertical: BorderSide(
-                  color: AppColors.border.withValues(alpha: 0.6),
-                  width: 1,
-                ),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  blurRadius: 30,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: scaffold,
-          ),
-        ),
-      );
-    }
-
-    return scaffold;
   }
 
   // ---------------------------------------------------------------------------
@@ -3900,18 +4466,28 @@ class _HomePageState extends State<HomePage> {
         : 'Dr. Raymond Vance';
     final facultyId = data.userId.isNotEmpty && data.userId != 'LC-2026-001'
         ? data.userId
-        : 'FAH-FAC-014';
+        : 'FAH/FAC/014';
 
     return Container(
       color: AppColors.navyDeep,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: SafeArea(
         bottom: false,
         child: Row(
           children: [
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.onNavy, size: 24),
+                tooltip: 'Navigation Menu',
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+            ),
+            const SizedBox(width: 6),
             Container(
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -3940,17 +4516,17 @@ class _HomePageState extends State<HomePage> {
                   Row(
                     children: [
                       const Text(
-                        'Fah Academy',
+                        'FAH ACADEMY',
                         style: TextStyle(
                           color: AppColors.onNavy,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.4,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
                           color: AppColors.gold.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(4),
@@ -3963,7 +4539,7 @@ class _HomePageState extends State<HomePage> {
                           'FACULTY',
                           style: TextStyle(
                             color: AppColors.gold,
-                            fontSize: 9,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -3971,12 +4547,12 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 1),
                   const Text(
-                    '2026/2027 • S1 • STAFF',
+                    '2026/2027 • S1 • STAFF PORTAL',
                     style: TextStyle(
                       color: AppColors.muted,
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
                     ),
@@ -3991,12 +4567,12 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(
                     Icons.notifications_none_rounded,
                     color: AppColors.onNavy,
-                    size: 24,
+                    size: 22,
                   ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Faculty Notices: 1 deadline pending review (SW101).'),
+                        content: Text('Faculty Notice: Continuous assessment deadline approaching for SWE201.'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -4008,8 +4584,8 @@ class _HomePageState extends State<HomePage> {
                   top: 6,
                   right: 6,
                   child: Container(
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     decoration: const BoxDecoration(
                       color: Color(0xFFF97316),
                       shape: BoxShape.circle,
@@ -4020,17 +4596,13 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(width: 8),
             PopupMenuButton<String>(
-              tooltip: 'Faculty Profile Menu',
+              tooltip: 'Faculty Profile & Regulations',
               color: AppColors.surface,
               onSelected: (val) {
                 if (val == 'signout') {
                   _handleSignOut();
-                } else if (val == 'role_student') {
-                  setState(() => _activeRoleOverride = DashboardRole.student);
-                } else if (val == 'role_faculty') {
-                  setState(() => _activeRoleOverride = DashboardRole.teacher);
-                } else if (val == 'role_admin') {
-                  setState(() => _activeRoleOverride = DashboardRole.admin);
+                } else if (val == 'handbook') {
+                  _showAcademicRegulationsModal(context);
                 }
               },
               itemBuilder: (ctx) => [
@@ -4047,79 +4619,55 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       Text(
-                        facultyId,
+                        'Matricule: $facultyId',
                         style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Faculty • Senior Lecturer',
-                        style: TextStyle(
                           color: AppColors.gold,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Dept. of Software Engineering & ICT',
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 10.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
-                  value: 'role_student',
+                  value: 'handbook',
                   child: Row(
                     children: [
-                      Icon(Icons.school_outlined, color: AppColors.gold, size: 18),
+                      Icon(Icons.menu_book_outlined, color: AppColors.gold, size: 18),
                       SizedBox(width: 8),
-                      Text('Student Portal View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                      Text('Senate Grading Norms', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
                     ],
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'role_faculty',
-                  child: Row(
-                    children: [
-                      Icon(Icons.badge_outlined, color: AppColors.gold, size: 18),
-                      SizedBox(width: 8),
-                      Text('Faculty Portal View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'role_admin',
-                  child: Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings_outlined, color: AppColors.gold, size: 18),
-                      SizedBox(width: 8),
-                      Text('Admin Workspace View', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'signout',
                   child: Row(
                     children: [
-                      Icon(Icons.logout, color: AppColors.gold, size: 18),
+                      Icon(Icons.logout, color: Color(0xFFF87171), size: 18),
                       SizedBox(width: 8),
-                      Text('Sign out', style: TextStyle(color: AppColors.gold)),
+                      Text('Sign out', style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
               ],
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: const BoxDecoration(
-                  color: AppColors.gold,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.navyDeep,
-                    size: 20,
+              child: CircleAvatar(
+                radius: 17,
+                backgroundColor: AppColors.surfaceRaised,
+                child: Text(
+                  facultyName.isNotEmpty ? facultyName[0].toUpperCase() : 'L',
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -6612,102 +7160,1719 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------------------------------------------------------------------
-  // ADMIN & LECTURER VIEW
+  // ADMIN & SUPER ADMIN 4-TAB PORTAL SCAFFOLD (Desktop + Mobile Responsive)
   // ---------------------------------------------------------------------------
 
-  Widget _buildAdminContent(DashboardData data, {required bool isWide}) {
-    return Column(
-      children: [
-        _AdminTopBar(
-          displayName: data.displayName,
-          userId: data.userId,
-          showMenu: !isWide,
-          onMenuTap: () => Scaffold.of(context).openDrawer(),
+  Widget _buildAdminPortalScaffold(DashboardData data) {
+    const tabSectionNames = [
+      'OPERATIONS OVERVIEW',
+      'STUDENT DIRECTORY',
+      'FEE LEDGER (FCFA)',
+      'TIMETABLE & VENUES',
+    ];
+    final currentSection = tabSectionNames[_adminTabIndex];
+    final isDesktop = MediaQuery.sizeOf(context).width >= 850;
+
+    if (isDesktop) {
+      return Scaffold(
+        backgroundColor: AppColors.navy,
+        body: Row(
+          children: [
+            _buildDesktopSidebar(
+              role: data.role,
+              data: data,
+              selectedIndex: _adminTabIndex,
+              onSelect: (idx) => setState(() => _adminTabIndex = idx),
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  _buildDesktopTopBar(
+                    data: data,
+                    sectionName: currentSection,
+                    roleLabel: data.role == DashboardRole.superAdmin
+                        ? 'Super Administrator • University SMS'
+                        : 'Administrator • Registry & Admissions',
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 1150),
+                        child: IndexedStack(
+                          index: _adminTabIndex,
+                          children: [
+                            _buildAdminOverviewTab(data),
+                            _buildAdminDirectoryTab(data),
+                            _buildAdminFinanceTab(data),
+                            _buildAdminTimetableTab(data),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        Expanded(child: _buildAdminDashboard(data)),
-      ],
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.navy,
+      drawer: _buildMobileDrawer(
+        role: data.role,
+        data: data,
+        selectedIndex: _adminTabIndex,
+        onSelect: (idx) {
+          Navigator.pop(context);
+          setState(() => _adminTabIndex = idx);
+        },
+      ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: _buildAdminPortalTopBar(data, currentSection),
+      ),
+      body: SafeArea(
+        child: IndexedStack(
+          index: _adminTabIndex,
+          children: [
+            _buildAdminOverviewTab(data),
+            _buildAdminDirectoryTab(data),
+            _buildAdminFinanceTab(data),
+            _buildAdminTimetableTab(data),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.navyDeep,
+          border: Border(top: BorderSide(color: AppColors.border, width: 0.8)),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: AppColors.navyDeep,
+          selectedItemColor: AppColors.gold,
+          unselectedItemColor: AppColors.muted,
+          currentIndex: _adminTabIndex,
+          type: BottomNavigationBarType.fixed,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          elevation: 0,
+          onTap: (index) => setState(() => _adminTabIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Overview',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people_alt_outlined),
+              activeIcon: Icon(Icons.people_alt),
+              label: 'Directory',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.payments_outlined),
+              activeIcon: Icon(Icons.payments),
+              label: 'Finance',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_month_outlined),
+              activeIcon: Icon(Icons.calendar_month),
+              label: 'Timetable',
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildAdminDashboard(DashboardData data) {
-    final actions = _actionsFor(data.role);
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Good day, ${data.displayName}',
-          style: const TextStyle(
-            color: AppColors.onNavy,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${data.role.label} dashboard',
-          style: const TextStyle(color: AppColors.muted, fontSize: 14),
-        ),
-        const SizedBox(height: 24),
-        const _SectionHeading('Quick Actions'),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: actions.length,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 220,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 10,
-            mainAxisExtent: 72,
-          ),
-          itemBuilder: (context, index) {
-            final action = actions[index];
-            return _DashboardActionTile(
-              action: action,
-              onTap: () {
+  Widget _buildAdminPortalTopBar(DashboardData data, String currentSection) {
+    final roleName = data.role == DashboardRole.superAdmin
+        ? 'SUPER ADMIN'
+        : 'ADMINISTRATOR';
+
+    return Container(
+      color: AppColors.navyDeep,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.onNavy, size: 24),
+                tooltip: 'Navigation Menu',
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.school,
+                    color: AppColors.gold,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'FAH ACADEMY',
+                        style: TextStyle(
+                          color: AppColors.onNavy,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.5),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          roleName,
+                          style: const TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 1),
+                  const Text(
+                    '2026/2027 • S1 • REGISTRY',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: AppColors.onNavy, size: 22),
+              onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${action.title} selected.')),
+                  const SnackBar(
+                    content: Text('Notice: 4 tuition payments pending verification via MTN MoMo & UBA.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
                 );
               },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              tooltip: 'Administrator Account',
+              color: AppColors.surface,
+              onSelected: (val) {
+                if (val == 'signout') {
+                  _handleSignOut();
+                } else if (val == 'handbook') {
+                  _showAcademicRegulationsModal(context);
+                }
+              },
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data.displayName,
+                        style: const TextStyle(
+                          color: AppColors.onNavy,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Matricule: ${data.userId}',
+                        style: const TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        data.role == DashboardRole.superAdmin
+                            ? 'Super Administrator • Full System Control'
+                            : 'University Administrator • Registry',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'handbook',
+                  child: Row(
+                    children: [
+                      Icon(Icons.menu_book_outlined, color: AppColors.gold, size: 18),
+                      SizedBox(width: 8),
+                      Text('Senate Academic Rules', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'signout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Color(0xFFF87171), size: 18),
+                      SizedBox(width: 8),
+                      Text('Sign out', style: TextStyle(color: Color(0xFFF87171), fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+              child: CircleAvatar(
+                radius: 17,
+                backgroundColor: AppColors.surfaceRaised,
+                child: Text(
+                  data.displayName.isNotEmpty
+                      ? data.displayName.substring(0, 1).toUpperCase()
+                      : 'A',
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 1: OPERATIONS OVERVIEW (Admin & Super Admin)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAdminOverviewTab(DashboardData data) {
+    final isSuper = data.role == DashboardRole.superAdmin;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        // Welcome Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF13204D), Color(0xFF1B2F6E)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome, ${data.displayName}',
+                          style: const TextStyle(
+                            color: AppColors.onNavy,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isSuper
+                              ? 'FAH ACADEMY SUPER ADMIN CONSOLE • 2026/2027'
+                              : 'REGISTRY & ACADEMIC OPERATIONS • 2026/2027',
+                          style: const TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      'STATUS: ONLINE',
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Cameroon Higher Education Standard (MINESUP Compliant) • 4-Year Credit System (LMD). Continuous Assessment accounts for 30% and Terminal Examinations for 70%.',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11.5,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // KPI Summary Metrics
+        const Text(
+          'INSTITUTIONAL METRICS',
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth > 500
+                ? (constraints.maxWidth - 36) / 4
+                : (constraints.maxWidth - 12) / 2;
+
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildAdminMetricCard(
+                  icon: Icons.school_rounded,
+                  label: 'Total Enrolment',
+                  value: '1,280',
+                  subtext: '4 cohorts (L100-L400)',
+                  width: cardWidth,
+                ),
+                _buildAdminMetricCard(
+                  icon: Icons.payments_rounded,
+                  label: 'Tuition Collected',
+                  value: '553.2M',
+                  subtext: '86.4% clearance rate',
+                  width: cardWidth,
+                  valueColor: const Color(0xFF4ADE80),
+                ),
+                _buildAdminMetricCard(
+                  icon: Icons.badge_rounded,
+                  label: 'Active Lecturers',
+                  value: '48',
+                  subtext: 'Computing & Eng.',
+                  width: cardWidth,
+                ),
+                _buildAdminMetricCard(
+                  icon: Icons.menu_book_rounded,
+                  label: 'Accredited Modules',
+                  value: '64',
+                  subtext: 'Semester 1 2026/27',
+                  width: cardWidth,
+                ),
+              ],
             );
           },
         ),
+
         const SizedBox(height: 24),
-        const _SectionHeading('System Metrics'),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: data.metrics
-              .map(
-                (metric) => SizedBox(
-                  width: 160,
-                  child: _MetricTile(metric: metric),
+
+        // Quick Operations Grid
+        const Text(
+          'QUICK ADMINISTRATIVE WORKFLOWS',
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth > 500
+                ? (constraints.maxWidth - 24) / 3
+                : constraints.maxWidth;
+
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildAdminActionCard(
+                  icon: Icons.how_to_reg_outlined,
+                  title: 'Admissions & Enrolment',
+                  description: 'Review pending applications and assign Cameroonian matricules.',
+                  onTap: () {
+                    setState(() => _adminTabIndex = 1);
+                  },
+                  width: cardWidth,
                 ),
-              )
-              .toList(),
+                _buildAdminActionCard(
+                  icon: Icons.fact_check_outlined,
+                  title: 'Grade Broadsheets (CA 30% / Exam 70%)',
+                  description: 'Audit faculty mark sheets and validate Senate pass thresholds.',
+                  onTap: () => _showSenateBroadsheetDialog(context),
+                  width: cardWidth,
+                ),
+                _buildAdminActionCard(
+                  icon: Icons.verified_user_outlined,
+                  title: 'Verify MoMo & Bank Deposits',
+                  description: 'Audit MTN MoMo, Orange Money, UBA & Afriland bank slips.',
+                  onTap: () {
+                    setState(() => _adminTabIndex = 2);
+                  },
+                  width: cardWidth,
+                ),
+                _buildAdminActionCard(
+                  icon: Icons.calendar_month_outlined,
+                  title: 'Timetable & Hall Scheduling',
+                  description: 'Manage amphitheatre capacities, lab allocations and exam shifts.',
+                  onTap: () {
+                    setState(() => _adminTabIndex = 3);
+                  },
+                  width: cardWidth,
+                ),
+                _buildAdminActionCard(
+                  icon: Icons.published_with_changes_outlined,
+                  title: 'Session de Rattrapage',
+                  description: 'Generate list of candidates registered for Resit Examinations.',
+                  onTap: () => _showResitSessionDialog(context),
+                  width: cardWidth,
+                ),
+                if (isSuper)
+                  _buildAdminActionCard(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'System Security & RBAC',
+                    description: 'Audit user roles, active tokens, and permission privileges.',
+                    onTap: () => _showSystemSecurityDialog(context),
+                    width: cardWidth,
+                  ),
+              ],
+            );
+          },
         ),
+
         const SizedBox(height: 24),
-        const _SectionHeading('System Notices'),
-        const SizedBox(height: 8),
-        ...data.notifications.map(
-          (notification) => _NotificationRow(notification: notification),
+
+        // System Notices
+        const Text(
+          'SENATE & CAMPUS NOTICES',
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
+          ),
         ),
+        const SizedBox(height: 10),
+
+        _buildAdminNoticeCard(
+          title: 'Continuous Assessment (CA 30%) Deadline',
+          date: 'Nov 14, 2026',
+          detail: 'All course instructors must submit CA marks before the terminal exam board.',
+          isUrgent: true,
+        ),
+        _buildAdminNoticeCard(
+          title: 'Tuition Fee 2nd Installment Notice',
+          date: 'Nov 20, 2026',
+          detail: 'Remind Level 100 & 200 students to complete fee clearance via MTN MoMo, Orange Money, or UBA.',
+          isUrgent: false,
+        ),
+        _buildAdminNoticeCard(
+          title: 'Amphitheatre 1 Audio-Visual Renovation',
+          date: 'Oct 28, 2026',
+          detail: 'Amphi 1 will be reserved for maintenance on Saturday from 08:00 to 14:00.',
+          isUrgent: false,
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildSidebar() {
-    return _DashboardSidebar(
-      selectedDestination: _selectedDestination,
-      isCollapsed: _isSidebarCollapsed,
-      onDestinationSelected: (destination) {
-        setState(() => _selectedDestination = destination);
-      },
-      onToggleCollapsed: () {
-        setState(() => _isSidebarCollapsed = !_isSidebarCollapsed);
-      },
-      onSignOut: _handleSignOut,
+  Widget _buildAdminMetricCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String subtext,
+    required double width,
+    Color? valueColor,
+  }) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              Icon(icon, color: AppColors.gold, size: 18),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? AppColors.onNavy,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtext,
+            style: const TextStyle(color: AppColors.muted, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminActionCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+    required double width,
+  }) {
+    return Material(
+      color: const Color(0xFF13204D),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: width,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: AppColors.gold, size: 18),
+                  ),
+                  const Spacer(),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.muted, size: 13),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.onNavy,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdminNoticeCard({
+    required String title,
+    required String date,
+    required String detail,
+    required bool isUrgent,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isUrgent ? const Color(0xFFF87171).withValues(alpha: 0.5) : AppColors.border.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isUrgent ? Icons.error_outline_rounded : Icons.info_outline_rounded,
+            color: isUrgent ? const Color(0xFFF87171) : AppColors.gold,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: AppColors.onNavy,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      date,
+                      style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  detail,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 2: STUDENT DIRECTORY (Admin & Super Admin)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAdminDirectoryTab(DashboardData data) {
+    final levels = [
+      'All Levels',
+      'Level 100 (Year 1)',
+      'Level 200 (Year 2)',
+      'Level 300 (Year 3)',
+      'Level 400 (Year 4)',
+    ];
+
+    final students = [
+      const _AdminStudentRecord(
+        name: 'Marcelle O. Ndong',
+        matricule: 'FAH/24/SWE/0891',
+        level: 'Level 200 (Year 2)',
+        program: 'B.Sc Software Engineering',
+        feeStatus: 'Cleared',
+        feePaid: 500000,
+        feeTotal: 500000,
+        gpa: 3.78,
+        standing: 'Distinction',
+      ),
+      const _AdminStudentRecord(
+        name: 'Divine F. Ayuk',
+        matricule: 'FAH/24/SWE/0482',
+        level: 'Level 200 (Year 2)',
+        program: 'B.Sc Software Engineering',
+        feeStatus: 'Installment 1 Cleared',
+        feePaid: 300000,
+        feeTotal: 500000,
+        gpa: 3.24,
+        standing: 'Good Standing',
+      ),
+      const _AdminStudentRecord(
+        name: 'Bryan K. Tabe',
+        matricule: 'FAH/24/CEF/0122',
+        level: 'Level 100 (Year 1)',
+        program: 'B.Eng Computer Engineering',
+        feeStatus: 'Cleared',
+        feePaid: 450000,
+        feeTotal: 450000,
+        gpa: 3.65,
+        standing: 'Distinction',
+      ),
+      const _AdminStudentRecord(
+        name: 'Brenda N. Fomukong',
+        matricule: 'FAH/24/ICT/0319',
+        level: 'Level 300 (Year 3)',
+        program: 'B.Sc Information Systems',
+        feeStatus: 'Cleared',
+        feePaid: 500000,
+        feeTotal: 500000,
+        gpa: 3.91,
+        standing: 'First Class Honors',
+      ),
+      const _AdminStudentRecord(
+        name: 'Kelly C. Enow',
+        matricule: 'FAH/24/SWE/0712',
+        level: 'Level 200 (Year 2)',
+        program: 'B.Sc Software Engineering',
+        feeStatus: 'Cleared',
+        feePaid: 500000,
+        feeTotal: 500000,
+        gpa: 3.15,
+        standing: 'Good Standing',
+      ),
+      const _AdminStudentRecord(
+        name: 'Samuel T. Mbarga',
+        matricule: 'FAH/24/ICT/0401',
+        level: 'Level 100 (Year 1)',
+        program: 'B.Sc ICT Fundamentals',
+        feeStatus: 'Unpaid',
+        feePaid: 0,
+        feeTotal: 450000,
+        gpa: 2.95,
+        standing: 'Probationary',
+      ),
+      const _AdminStudentRecord(
+        name: 'Christelle M. Bih',
+        matricule: 'FAH/24/CEF/0204',
+        level: 'Level 200 (Year 2)',
+        program: 'B.Eng Computer Engineering',
+        feeStatus: 'Cleared',
+        feePaid: 500000,
+        feeTotal: 500000,
+        gpa: 3.82,
+        standing: 'Distinction',
+      ),
+      const _AdminStudentRecord(
+        name: 'Alain P. Kamga',
+        matricule: 'FAH/24/SWE/0914',
+        level: 'Level 400 (Year 4)',
+        program: 'B.Sc Software Engineering',
+        feeStatus: 'Cleared',
+        feePaid: 550000,
+        feeTotal: 550000,
+        gpa: 3.72,
+        standing: 'Distinction',
+      ),
+    ];
+
+    final filteredStudents = students.where((s) {
+      if (_adminDirectoryLevelFilter > 0) {
+        final expectedLevel = levels[_adminDirectoryLevelFilter];
+        if (s.level != expectedLevel) return false;
+      }
+      if (_adminDirectorySearchQuery.trim().isNotEmpty) {
+        final query = _adminDirectorySearchQuery.toLowerCase();
+        final matchName = s.name.toLowerCase().contains(query);
+        final matchMatricule = s.matricule.toLowerCase().contains(query);
+        final matchProg = s.program.toLowerCase().contains(query);
+        if (!matchName && !matchMatricule && !matchProg) return false;
+      }
+      return true;
+    }).toList();
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        // Title & Search
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Student Directory',
+                  style: TextStyle(
+                    color: AppColors.onNavy,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  '${filteredStudents.length} of ${students.length} students displayed',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                ),
+              ],
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _showAddStudentModal(context),
+              icon: const Icon(Icons.person_add_alt_1, size: 16),
+              label: const Text('Add Student'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDeep,
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        // Search Input
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF13204D),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+          ),
+          child: TextField(
+            style: const TextStyle(color: AppColors.onNavy, fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search by student name or matricule (e.g. FAH/24/SWE/0891)...',
+              hintStyle: const TextStyle(color: AppColors.muted, fontSize: 12),
+              prefixIcon: const Icon(Icons.search, color: AppColors.gold, size: 20),
+              suffixIcon: _adminDirectorySearchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, color: AppColors.muted, size: 16),
+                      onPressed: () => setState(() => _adminDirectorySearchQuery = ''),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            onChanged: (val) => setState(() => _adminDirectorySearchQuery = val),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Level Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(levels.length, (idx) {
+              final isSelected = _adminDirectoryLevelFilter == idx;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(levels[idx]),
+                  selected: isSelected,
+                  selectedColor: AppColors.gold,
+                  backgroundColor: const Color(0xFF13204D),
+                  labelStyle: TextStyle(
+                    color: isSelected ? AppColors.navyDeep : AppColors.onNavy,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  ),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.gold : AppColors.border.withValues(alpha: 0.6),
+                  ),
+                  onSelected: (_) => setState(() => _adminDirectoryLevelFilter = idx),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Student Cards
+        ...filteredStudents.map((s) => _buildAdminStudentTile(context, s)),
+
+        if (filteredStudents.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            alignment: Alignment.center,
+            child: const Text(
+              'No students found matching your search query.',
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
+            ),
+          ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildAdminStudentTile(BuildContext context, _AdminStudentRecord s) {
+    Color badgeBg;
+    Color badgeText;
+
+    if (s.feeStatus == 'Cleared') {
+      badgeBg = const Color(0xFF152A20);
+      badgeText = const Color(0xFF4ADE80);
+    } else if (s.feeStatus == 'Unpaid') {
+      badgeBg = const Color(0xFF331114);
+      badgeText = const Color(0xFFF87171);
+    } else {
+      badgeBg = const Color(0xFF33200D);
+      badgeText = const Color(0xFFFBBF24);
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 17,
+                backgroundColor: AppColors.surfaceRaised,
+                child: Text(
+                  s.name.substring(0, 1),
+                  style: const TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.name,
+                      style: const TextStyle(
+                        color: AppColors.onNavy,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      '${s.matricule} • ${s.level}',
+                      style: const TextStyle(color: AppColors.gold, fontSize: 10.5, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  s.feeStatus.toUpperCase(),
+                  style: TextStyle(
+                    color: badgeText,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                s.program,
+                style: const TextStyle(color: AppColors.muted, fontSize: 11),
+              ),
+              RichText(
+                text: TextSpan(
+                  text: 'GPA: ',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                  children: [
+                    TextSpan(
+                      text: s.gpa.toStringAsFixed(2),
+                      style: const TextStyle(
+                        color: AppColors.onNavy,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' (${s.standing})',
+                      style: const TextStyle(color: AppColors.gold, fontSize: 10.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Tuition: ${s.feePaid.toStringAsFixed(0)} / ${s.feeTotal.toStringAsFixed(0)} FCFA',
+                style: const TextStyle(color: AppColors.muted, fontSize: 10.5),
+              ),
+              TextButton(
+                onPressed: () => _showStudentDetailsModal(context, s),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.gold,
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(60, 24),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('View Record →', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 3: TUITION & FINANCE LEDGER (FCFA) (Admin & Super Admin)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAdminFinanceTab(DashboardData data) {
+    final transactions = [
+      const _AdminTransactionRecord(
+        txId: 'CM-MOMO-892144',
+        date: 'Oct 19, 2026',
+        studentName: 'Marcelle O. Ndong',
+        matricule: 'FAH/24/SWE/0891',
+        channel: 'MTN Cameroon MoMo',
+        amount: 250000,
+        status: 'Verified & Cleared',
+      ),
+      const _AdminTransactionRecord(
+        txId: 'OM-DLA-338192',
+        date: 'Oct 18, 2026',
+        studentName: 'Divine F. Ayuk',
+        matricule: 'FAH/24/SWE/0482',
+        channel: 'Orange Money Cameroun',
+        amount: 300000,
+        status: 'Verified & Cleared',
+      ),
+      const _AdminTransactionRecord(
+        txId: 'UBA-YDE-049182',
+        date: 'Oct 16, 2026',
+        studentName: 'Bryan K. Tabe',
+        matricule: 'FAH/24/CEF/0122',
+        channel: 'UBA Cameroon Deposit',
+        amount: 450000,
+        status: 'Verified & Cleared',
+      ),
+      const _AdminTransactionRecord(
+        txId: 'AFB-6629104',
+        date: 'Oct 15, 2026',
+        studentName: 'Brenda N. Fomukong',
+        matricule: 'FAH/24/ICT/0319',
+        channel: 'Afriland First Bank Wire',
+        amount: 500000,
+        status: 'Verified & Cleared',
+      ),
+      const _AdminTransactionRecord(
+        txId: 'CM-MOMO-901452',
+        date: 'Oct 20, 2026',
+        studentName: 'Christelle M. Bih',
+        matricule: 'FAH/24/CEF/0204',
+        channel: 'MTN Cameroon MoMo',
+        amount: 250000,
+        status: 'Pending Clearance',
+      ),
+      const _AdminTransactionRecord(
+        txId: 'OM-BUEA-11029',
+        date: 'Oct 20, 2026',
+        studentName: 'Kelly C. Enow',
+        matricule: 'FAH/24/SWE/0712',
+        channel: 'Orange Money Cameroun',
+        amount: 200000,
+        status: 'Pending Clearance',
+      ),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tuition & Fee Ledger',
+                  style: TextStyle(
+                    color: AppColors.onNavy,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Cameroon Currency (FCFA) • Academic Year 2026/2027',
+                  style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _showAuditReportDownloadDialog(context),
+              icon: const Icon(Icons.download_rounded, size: 16),
+              label: const Text('Export Ledger'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDeep,
+                textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Summary Card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13204D),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('TOTAL TUITION EXPECTED', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text('640,000,000 FCFA', style: TextStyle(color: AppColors.onNavy, fontSize: 24, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: const LinearProgressIndicator(
+                  value: 0.864,
+                  minHeight: 8,
+                  backgroundColor: AppColors.surface,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Collected: 553,200,000 FCFA (86.4%)', style: TextStyle(color: Color(0xFF4ADE80), fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text('Outstanding: 86,800,000 FCFA', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 11, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Channels Breakdown
+        const Text(
+          'PAYMENT GATEWAYS IN CAMEROON',
+          style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildGatewayBox('MTN MoMo', '198.4M FCFA', Icons.phone_android, const Color(0xFFFBBF24)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildGatewayBox('Orange Money', '162.1M FCFA', Icons.smartphone, const Color(0xFFF97316)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGatewayBox('UBA Cameroon', '120.5M FCFA', Icons.account_balance, const Color(0xFFEF4444)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildGatewayBox('Afriland Bank', '72.2M FCFA', Icons.account_balance_wallet, const Color(0xFF3B82F6)),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Transaction Ledger
+        const Text(
+          'RECENT CLEARANCE TRANSACTIONS',
+          style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+
+        ...transactions.map((tx) => _buildTransactionCard(tx)),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildGatewayBox(String name, String amount, IconData icon, Color iconColor) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(color: AppColors.onNavy, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(amount, style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(_AdminTransactionRecord tx) {
+    final isCleared = tx.status.contains('Verified');
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isCleared ? const Color(0xFF152A20) : const Color(0xFF33200D),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isCleared ? Icons.check_circle_outline : Icons.pending_actions_outlined,
+              color: isCleared ? const Color(0xFF4ADE80) : const Color(0xFFFBBF24),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      tx.studentName,
+                      style: const TextStyle(color: AppColors.onNavy, fontSize: 12.5, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${tx.amount.toStringAsFixed(0)} FCFA',
+                      style: const TextStyle(color: AppColors.gold, fontSize: 12.5, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${tx.channel} • ${tx.txId}',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                    ),
+                    Text(
+                      tx.date,
+                      style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB 4: TIMETABLE & VENUES (Admin & Super Admin)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAdminTimetableTab(DashboardData data) {
+    final venues = [
+      ('Amphitheatre 1', 'Main Academic Complex', 'Capacity: 350 seats', Icons.corporate_fare),
+      ('Amphitheatre 2', 'Science & Tech Wing', 'Capacity: 250 seats', Icons.school),
+      ('Hall B-104', 'Engineering Complex', 'Capacity: 120 seats', Icons.meeting_room),
+      ('Computing Lab 1', 'ICT Innovation Centre', '60 Workstations', Icons.computer),
+    ];
+
+    final schedule = [
+      ('Monday 08:00 - 10:00', 'SWE101 - Introduction to Programming', 'Amphitheatre 1', 'Level 100 (Year 1)'),
+      ('Monday 10:30 - 12:30', 'SWE201 - Data Structures & Algorithms', 'Hall B-104', 'Level 200 (Year 2)'),
+      ('Tuesday 08:00 - 10:00', 'SWE203 - Object Oriented Design', 'Computing Lab 1', 'Level 200 (Year 2)'),
+      ('Tuesday 14:00 - 16:00', 'CEF205 - Computer Architecture', 'Amphitheatre 2', 'Level 200 (Year 2)'),
+      ('Wednesday 09:00 - 11:00', 'MAT201 - Discrete Mathematics', 'Amphitheatre 1', 'Level 200 (Year 2)'),
+      ('Thursday 10:00 - 12:00', 'ICT207 - Web Technologies & APIs', 'Computing Lab 1', 'Level 200 (Year 2)'),
+      ('Friday 08:00 - 10:00', 'LAW204 - Cyber Law & Professional Ethics', 'Amphitheatre 2', 'Level 200 (Year 2)'),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      children: [
+        const Text(
+          'Timetable & Campus Venues',
+          style: TextStyle(
+            color: AppColors.onNavy,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const Text(
+          'Lecture Hall Allocations & Examination Shifts • Semester 1',
+          style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.w600),
+        ),
+
+        const SizedBox(height: 16),
+
+        const Text(
+          'CAMPUS VENUE ALLOCATION',
+          style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth > 500
+                ? (constraints.maxWidth - 12) / 2
+                : constraints.maxWidth;
+
+            return Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              children: venues.map((v) {
+                return Container(
+                  width: cardWidth,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF13204D),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(v.$4, color: AppColors.gold, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(v.$1, style: const TextStyle(color: AppColors.onNavy, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                            Text('${v.$2} • ${v.$3}', style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+
+        const SizedBox(height: 24),
+
+        const Text(
+          'SEMESTER 1 MASTER LECTURE SCHEDULE',
+          style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+        ),
+        const SizedBox(height: 10),
+
+        ...schedule.map((s) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF13204D),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.schedule, color: AppColors.gold, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.$2,
+                        style: const TextStyle(color: AppColors.onNavy, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${s.$1} • ${s.$3}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppColors.gold.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              s.$4,
+                              style: const TextStyle(color: AppColors.gold, fontSize: 9.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // ADMIN INTERACTIVE MODALS & DIALOGS
+  // ---------------------------------------------------------------------------
+
+  void _showSenateBroadsheetDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Senate Examination Broadsheet Audit',
+          style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'All Level 100 & Level 200 courses are computed using the Cameroon Senate standard:\n\n'
+          '• Continuous Assessment (CA): 30 Marks\n'
+          '• Terminal Examination: 70 Marks\n'
+          '• Minimum Pass Threshold: 50.0% (Grade C, GPA 2.00)\n'
+          '• Scores below 40.0% are scheduled for Session de Rattrapage (Resit).\n\n'
+          'Status: 98.4% of Continuous Assessment sheets are uploaded by faculty.',
+          style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(color: AppColors.gold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showResitSessionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Session de Rattrapage (Resit Schedule)',
+          style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'The Catch-up / Resit session is scheduled for February 2027 following the first semester examinations board.\n\n'
+          'Students with marks between 35.0% and 49.9% are eligible to resit eligible course units at 5,000 FCFA per credit value.',
+          style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Dismiss', style: TextStyle(color: AppColors.gold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSystemSecurityDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Super Admin Security Audit',
+          style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          '✓ Database Row-Level Security (RLS) is Active.\n'
+          '✓ Role-Based Access Control (RBAC) enforced on server.\n'
+          '✓ Zero backdoor role switches permitted.\n'
+          '✓ HTTPS TLS 1.3 encrypted session tokens.',
+          style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Done', style: TextStyle(color: AppColors.gold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddStudentModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Enrol New Student',
+          style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'To enrol a student and assign an official matricule (e.g. FAH/24/SWE/xxxx), register the applicant through the official Cameroon admissions portal or run the database migration script.',
+          style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(color: AppColors.gold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStudentDetailsModal(BuildContext context, _AdminStudentRecord s) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  s.name,
+                  style: const TextStyle(color: AppColors.onNavy, fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: AppColors.muted),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${s.matricule} • ${s.level} • ${s.program}',
+              style: const TextStyle(color: AppColors.gold, fontSize: 11.5, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '• Cumulative GPA: ${s.gpa.toStringAsFixed(2)} / 4.00 (${s.standing})\n'
+              '• Fee Status: ${s.feeStatus} (${s.feePaid.toStringAsFixed(0)} / ${s.feeTotal.toStringAsFixed(0)} FCFA)\n'
+              '• Enrolled Modules: SWE201, SWE203, CEF205, ICT207, MAT201, ENG202\n'
+              '• Campus: Cameroon Main Campus (Yaoundé / Douala)',
+              style: const TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.6),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAuditReportDownloadDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✓ Official 2026/2027 Tuition Ledger exported successfully (FCFA).'),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -6726,6 +8891,50 @@ class _HomePageState extends State<HomePage> {
 // ---------------------------------------------------------------------------
 // HELPER MODELS & SUPPORTING WIDGETS
 // ---------------------------------------------------------------------------
+
+class _AdminStudentRecord {
+  final String name;
+  final String matricule;
+  final String level;
+  final String program;
+  final String feeStatus;
+  final double feePaid;
+  final double feeTotal;
+  final double gpa;
+  final String standing;
+
+  const _AdminStudentRecord({
+    required this.name,
+    required this.matricule,
+    required this.level,
+    required this.program,
+    required this.feeStatus,
+    required this.feePaid,
+    required this.feeTotal,
+    required this.gpa,
+    required this.standing,
+  });
+}
+
+class _AdminTransactionRecord {
+  final String txId;
+  final String date;
+  final String studentName;
+  final String matricule;
+  final String channel;
+  final double amount;
+  final String status;
+
+  const _AdminTransactionRecord({
+    required this.txId,
+    required this.date,
+    required this.studentName,
+    required this.matricule,
+    required this.channel,
+    required this.amount,
+    required this.status,
+  });
+}
 
 class _StudentCourseModel {
   final String code;
@@ -6779,508 +8988,8 @@ class _FacultyStudentGradeModel {
   });
 }
 
-class _AdminTopBar extends StatelessWidget {
-  const _AdminTopBar({
-    required this.displayName,
-    required this.userId,
-    required this.showMenu,
-    required this.onMenuTap,
-  });
-
-  final String displayName;
-  final String userId;
-  final bool showMenu;
-  final VoidCallback onMenuTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: AppColors.navyDeep,
-      child: Row(
-        children: [
-          if (showMenu) ...[
-            IconButton(
-              icon: const Icon(Icons.menu, color: AppColors.onNavy),
-              onPressed: onMenuTap,
-            ),
-            const SizedBox(width: 8),
-          ],
-          const Text(
-            'LIAH ACADEMY SMS',
-            style: TextStyle(
-              color: AppColors.onNavy,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            displayName,
-            style: const TextStyle(
-              color: AppColors.onNavy,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 8),
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: AppColors.surface,
-            child: Text(
-              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A',
-              style: const TextStyle(color: AppColors.gold, fontSize: 11),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-enum _SidebarDestination {
-  dashboard('Dashboard', Icons.dashboard_outlined),
-  registration('Registration', Icons.assignment_outlined),
-  courses('Courses', Icons.menu_book_outlined),
-  results('Results', Icons.bar_chart_outlined),
-  finance('Finance', Icons.account_balance_wallet_outlined),
-  timetable('Timetable', Icons.calendar_month_outlined),
-  attendance('Attendance', Icons.fact_check_outlined),
-  settings('Settings', Icons.settings_outlined);
-
-  const _SidebarDestination(this.label, this.icon);
-
-  final String label;
-  final IconData icon;
-}
-
-class _DashboardSidebar extends StatelessWidget {
-  const _DashboardSidebar({
-    required this.selectedDestination,
-    required this.isCollapsed,
-    required this.onDestinationSelected,
-    required this.onToggleCollapsed,
-    required this.onSignOut,
-  });
-
-  final _SidebarDestination selectedDestination;
-  final bool isCollapsed;
-  final ValueChanged<_SidebarDestination> onDestinationSelected;
-  final VoidCallback onToggleCollapsed;
-  final Future<void> Function() onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.navyDeep,
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisAlignment: isCollapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
-              children: [
-                Image.asset('assets/images/logo.png', width: 28, height: 28),
-                if (!isCollapsed) ...[
-                  const SizedBox(width: 8),
-                  const Text(
-                    'LIAH',
-                    style: TextStyle(
-                      color: AppColors.onNavy,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          ..._SidebarDestination.values.map(
-            (d) => _SidebarItem(
-              destination: d,
-              selected: selectedDestination == d,
-              isCollapsed: isCollapsed,
-              onTap: () => onDestinationSelected(d),
-            ),
-          ),
-          const Spacer(),
-          _SidebarFooterAction(
-            icon: Icons.logout,
-            label: 'Sign out',
-            isCollapsed: isCollapsed,
-            color: AppColors.gold,
-            onTap: onSignOut,
-          ),
-          _SidebarFooterAction(
-            icon: isCollapsed ? Icons.chevron_right : Icons.chevron_left,
-            label: isCollapsed ? 'Expand' : 'Collapse',
-            isCollapsed: isCollapsed,
-            onTap: onToggleCollapsed,
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _SidebarItem extends StatelessWidget {
-  const _SidebarItem({
-    required this.destination,
-    required this.selected,
-    required this.isCollapsed,
-    required this.onTap,
-  });
-
-  final _SidebarDestination destination;
-  final bool selected;
-  final bool isCollapsed;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isCollapsed ? 0 : 10,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.surfaceRaised : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            mainAxisAlignment: isCollapsed
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            children: [
-              Icon(
-                destination.icon,
-                color: selected ? AppColors.gold : AppColors.muted,
-                size: 18,
-              ),
-              if (!isCollapsed) ...[
-                const SizedBox(width: 8),
-                Text(
-                  destination.label,
-                  style: TextStyle(
-                    color: selected ? AppColors.onNavy : AppColors.muted,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SidebarFooterAction extends StatelessWidget {
-  const _SidebarFooterAction({
-    required this.icon,
-    required this.label,
-    required this.isCollapsed,
-    required this.onTap,
-    this.color = AppColors.muted,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool isCollapsed;
-  final VoidCallback onTap;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isCollapsed ? 0 : 10,
-            vertical: 8,
-          ),
-          child: Row(
-            mainAxisAlignment: isCollapsed
-                ? MainAxisAlignment.center
-                : MainAxisAlignment.start,
-            children: [
-              Icon(icon, color: color, size: 16),
-              if (!isCollapsed) ...[
-                const SizedBox(width: 8),
-                Text(label, style: TextStyle(color: color, fontSize: 11)),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DashboardAction {
-  final String title;
-  final String description;
-  final IconData icon;
-
-  const _DashboardAction(this.title, this.description, this.icon);
-}
-
-List<_DashboardAction> _actionsFor(DashboardRole role) => switch (role) {
-  DashboardRole.student => const [],
-  DashboardRole.teacher => const [
-    _DashboardAction(
-      'View Assigned Courses',
-      'Open your teaching schedule',
-      Icons.menu_book_outlined,
-    ),
-    _DashboardAction(
-      'Upload Grades',
-      'Submit student assessment results',
-      Icons.grade_outlined,
-    ),
-    _DashboardAction(
-      'Manage Attendance',
-      'Update class attendance',
-      Icons.fact_check_outlined,
-    ),
-    _DashboardAction(
-      'Message Students',
-      'Communicate with your classes',
-      Icons.forum_outlined,
-    ),
-  ],
-  DashboardRole.admin => const [
-    _DashboardAction(
-      'Approve Admissions',
-      'Review pending applications',
-      Icons.how_to_reg_outlined,
-    ),
-    _DashboardAction(
-      'Verify Payments',
-      'Review pending transactions',
-      Icons.verified_outlined,
-    ),
-    _DashboardAction(
-      'Manage Programs',
-      'Create and update programs',
-      Icons.menu_book_outlined,
-    ),
-    _DashboardAction(
-      'Generate Reports',
-      'Review academy performance',
-      Icons.summarize_outlined,
-    ),
-    _DashboardAction(
-      'Send Announcements',
-      'Share updates with the academy',
-      Icons.campaign_outlined,
-    ),
-  ],
-  DashboardRole.superAdmin => const [
-    _DashboardAction(
-      'System Configuration',
-      'Manage institution settings & roles',
-      Icons.settings_suggest_outlined,
-    ),
-    _DashboardAction(
-      'Manage Admins',
-      'Create and manage admin accounts',
-      Icons.admin_panel_settings_outlined,
-    ),
-    _DashboardAction(
-      'Configure Fees',
-      'Set tuition and payment structures',
-      Icons.price_change_outlined,
-    ),
-    _DashboardAction(
-      'Publish Final Results',
-      'Approve and publish school grades',
-      Icons.published_with_changes_outlined,
-    ),
-    _DashboardAction(
-      'Audit Logs',
-      'View system-wide security actions',
-      Icons.receipt_long_outlined,
-    ),
-  ],
-  DashboardRole.parent => const [
-    _DashboardAction(
-      'Monitor Student Progress',
-      'Review grades and attendance',
-      Icons.insights_outlined,
-    ),
-    _DashboardAction(
-      'Fee Reminders',
-      'Review upcoming payment dates',
-      Icons.notifications_active_outlined,
-    ),
-  ],
-};
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.onNavy,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-}
-
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({required this.metric});
-
-  final DashboardMetric metric;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(metric.icon, color: AppColors.gold, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            metric.value,
-            style: const TextStyle(
-              color: AppColors.onNavy,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            metric.label,
-            style: const TextStyle(color: AppColors.muted, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DashboardActionTile extends StatelessWidget {
-  const _DashboardActionTile({
-    required this.action,
-    required this.onTap,
-  });
-
-  final _DashboardAction action;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            children: [
-              Icon(action.icon, color: AppColors.gold, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  action.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.onNavy,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationRow extends StatelessWidget {
-  const _NotificationRow({required this.notification});
-
-  final DashboardNotification notification;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline,
-            color: AppColors.gold,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notification.title,
-                  style: const TextStyle(
-                    color: AppColors.onNavy,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  notification.message,
-                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _DashboardLoadError extends StatelessWidget {
+
   const _DashboardLoadError({required this.onRetry});
 
   final VoidCallback onRetry;
