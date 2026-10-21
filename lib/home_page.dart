@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
+import 'assessment_setup_page.dart';
+import 'attendance_register_page.dart';
 import 'course_registration_page.dart';
 import 'dashboard_data.dart';
+import 'grade_entry_page.dart';
+import 'grade_submission_detail_page.dart';
+import 'resit_management_page.dart';
+import 'staff_announcements_page.dart';
+import 'staff_class_list_page.dart';
+import 'staff_course_detail_page.dart';
+import 'staff_courses_page.dart';
+import 'staff_dashboard_page.dart';
+import 'staff_profile_page.dart';
+import 'staff_timetable_page.dart';
 import 'student_academics_page.dart';
 import 'student_announcements_page.dart';
 import 'student_attendance_page.dart';
@@ -611,10 +623,10 @@ class _HomePageState extends State<HomePage> {
           ]
         : (role == DashboardRole.teacher
             ? [
-                (Icons.grid_view_rounded, 'Faculty Dashboard', 0),
-                (Icons.menu_book_outlined, 'Teaching Modules', 1),
-                (Icons.fact_check_outlined, 'Attendance Register', 2),
-                (Icons.trending_up_rounded, 'Grade Entry (CA & Exam)', 3),
+                (Icons.home_outlined, 'Home Dashboard', 0),
+                (Icons.menu_book_outlined, 'My Courses', 1),
+                (Icons.how_to_reg_outlined, 'Attendance Register', 2),
+                (Icons.person_outline, 'Faculty Profile', 3),
               ]
             : [
                 (Icons.dashboard_outlined, 'Operations Overview', 0),
@@ -830,10 +842,10 @@ class _HomePageState extends State<HomePage> {
           ]
         : (role == DashboardRole.teacher
             ? [
-                (Icons.grid_view_rounded, 'Faculty Dashboard', 0),
-                (Icons.menu_book_outlined, 'Assigned Courses', 1),
-                (Icons.fact_check_outlined, 'Attendance Register', 2),
-                (Icons.trending_up_rounded, 'Grade Entry (CA & Exam)', 3),
+                (Icons.home_outlined, 'Home Dashboard', 0),
+                (Icons.menu_book_outlined, 'My Courses', 1),
+                (Icons.how_to_reg_outlined, 'Attendance Register', 2),
+                (Icons.person_outline, 'Faculty Profile', 3),
               ]
             : [
                 (Icons.dashboard_outlined, 'Operations Overview', 0),
@@ -5908,12 +5920,28 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   Widget _buildFacultyPortalScaffold(DashboardData data) {
     const tabSectionNames = [
       'FACULTY DASHBOARD',
-      'TEACHING MODULES',
+      'ASSIGNED COURSES',
       'ATTENDANCE REGISTER',
-      'GRADE ENTRY (CA & EXAM)'
+      'FACULTY PROFILE'
     ];
     final currentSection = tabSectionNames[_facultyTabIndex];
     final isDesktop = MediaQuery.sizeOf(context).width >= 850;
+
+    final staffPages = [
+      StaffDashboardPage(
+        data: data,
+        onRefresh: () async => setState(_loadDashboard),
+        onSignOut: widget.onSignOut,
+        onNavigateTab: (tabIdx) => setState(() => _facultyTabIndex = tabIdx),
+      ),
+      const StaffCoursesPage(),
+      const AttendanceRegisterPage(),
+      StaffProfilePage(
+        staffName: data.displayName.isNotEmpty ? data.displayName : 'Engr. Divine Mbella',
+        staffId: data.userId.isNotEmpty ? data.userId : 'LIAH-FAC-2019-012',
+        onSignOut: widget.onSignOut,
+      ),
+    ];
 
     if (isDesktop) {
       return Scaffold(
@@ -5940,12 +5968,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
                         constraints: const BoxConstraints(maxWidth: 1150),
                         child: IndexedStack(
                           index: _facultyTabIndex,
-                          children: [
-                            _buildFacultyHomeTab(data),
-                            _buildFacultyCoursesTab(data),
-                            _buildFacultyAttendanceTab(data),
-                            _buildFacultyGradesTab(data),
-                          ],
+                          children: staffPages,
                         ),
                       ),
                     ),
@@ -5976,12 +5999,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
       body: SafeArea(
         child: IndexedStack(
           index: _facultyTabIndex,
-          children: [
-            _buildFacultyHomeTab(data),
-            _buildFacultyCoursesTab(data),
-            _buildFacultyAttendanceTab(data),
-            _buildFacultyGradesTab(data),
-          ],
+          children: staffPages,
         ),
       ),
       bottomNavigationBar: Container(
@@ -6001,8 +6019,8 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
           onTap: (index) => setState(() => _facultyTabIndex = index),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_rounded),
-              activeIcon: Icon(Icons.grid_view_rounded),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
             BottomNavigationBarItem(
@@ -6011,14 +6029,14 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
               label: 'Courses',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.fact_check_outlined),
-              activeIcon: Icon(Icons.fact_check),
+              icon: Icon(Icons.how_to_reg_outlined),
+              activeIcon: Icon(Icons.how_to_reg),
               label: 'Attendance',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.trending_up_rounded),
-              activeIcon: Icon(Icons.trending_up_rounded),
-              label: 'Grades',
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),
