@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_colors.dart';
 import 'auth_gate.dart';
+import 'forgot_password_page.dart';
 import 'register_page.dart';
+import 'reset_password_page.dart';
 import 'session_store.dart';
 import 'splash_page.dart';
 
@@ -58,7 +60,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Liah Academy',
-      routes: {'/register': (context) => const RegisterPage()},
+      routes: {
+        '/register': (context) => const RegisterPage(),
+        '/forgot-password': (context) => const ForgotPasswordPage(),
+        '/reset-password': (context) => const ResetPasswordPage(),
+      },
       theme: ThemeData(
         colorScheme: const ColorScheme.dark(
           primary: AppColors.gold,
