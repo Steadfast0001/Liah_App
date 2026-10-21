@@ -6,6 +6,7 @@ import 'app_colors.dart';
 import 'auth_gate.dart';
 import 'register_page.dart';
 import 'session_store.dart';
+import 'splash_page.dart';
 
 const String _defaultSupabaseUrl = 'https://nqdlptrodovwbtqabxyu.supabase.co';
 const String _defaultSupabaseAnonKey =
@@ -81,7 +82,7 @@ class MyApp extends StatelessWidget {
           hintStyle: TextStyle(color: AppColors.muted),
         ),
       ),
-      home: AuthGate(sessionStore: sessionStore ?? SessionStore()),
+      home: SplashPage(sessionStore: sessionStore ?? SessionStore()),
     );
   }
 }
