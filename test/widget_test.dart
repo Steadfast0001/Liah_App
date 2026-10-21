@@ -13,7 +13,7 @@ void main() {
 
     expect(find.byType(LoginPage), findsOneWidget);
     expect(find.text('LIAH ACADEMY'), findsOneWidget);
-    expect(find.text('LOGIN'), findsOneWidget);
+    expect(find.text('SIGN IN'), findsOneWidget);
   });
 }
 

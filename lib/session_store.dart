@@ -6,6 +6,7 @@ class SessionStore {
   static const _roleKey = 'user_role';
   static const _emailKey = 'user_email';
   static const _nameKey = 'user_name';
+  static const _rememberMeKey = 'remember_me';
   static const _storage = FlutterSecureStorage();
 
   Future<String?> readToken() async {
@@ -47,6 +48,21 @@ class SessionStore {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<bool> readRememberMe() async {
+    try {
+      final val = await _storage.read(key: _rememberMeKey);
+      return val != 'false';
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> saveRememberMe(bool remember) async {
+    try {
+      await _storage.write(key: _rememberMeKey, value: remember.toString());
+    } catch (_) {}
   }
 
   Future<void> saveLocalSessionForRole(
