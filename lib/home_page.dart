@@ -164,10 +164,26 @@ class _HomePageState extends State<HomePage> {
   // Faculty interactive attendance entries: matricule -> 'present' | 'late' | 'absent'
   final Map<String, String> _attendanceMap = {};
 
+  // Lecturer Attendance Course-Level Authorization
+  String _selectedAttendanceCourseCode = 'SWE201';
+
   // Admin & Super Admin 4-tab index: 0: Overview, 1: Directory, 2: Finance (FCFA), 3: Timetable
   int _adminTabIndex = 0;
   String _adminDirectorySearchQuery = '';
   int _adminDirectoryLevelFilter = 0; // 0: All, 1: Level 100, 2: Level 200, 3: Level 300, 4: Level 400
+
+  // Bursary Verification Console (Matching uploaded screenshot 04fcd5d0)
+  bool _showBursaryVerificationScreen = false;
+  int _bursaryFilterIndex = 0; // 0: Urgent Audit (5), 1: All Pending (14), 2: Flagged (2)
+  bool _clarisseCleared = false;
+  final Set<String> _clearedBursarySlips = {};
+
+  // Universal User Settings Preferences
+  String _appLanguage = 'English (Cameroon)';
+  bool _highContrastHciMode = false;
+  bool _notificationsCaAlerts = true;
+  bool _notificationsFeeAlerts = true;
+  bool _notificationsTimetableAlerts = true;
 
   DashboardRepository get _repository =>
       widget.repository ?? const DemoDashboardRepository();
@@ -464,6 +480,8 @@ class _HomePageState extends State<HomePage> {
                   _handleSignOut();
                 } else if (val == 'handbook') {
                   _showAcademicRegulationsModal(context);
+                } else if (val == 'settings') {
+                  _showSettingsModal(context, data);
                 }
               },
               itemBuilder: (ctx) => [
@@ -499,6 +517,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_outlined, color: AppColors.gold, size: 18),
+                      SizedBox(width: 8),
+                      Text('Settings & Security', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'handbook',
                   child: Row(
@@ -732,6 +760,12 @@ class _HomePageState extends State<HomePage> {
                     dense: true,
                     onTap: () => _showAcademicRegulationsModal(context),
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.settings_outlined, color: AppColors.muted, size: 19),
+                    title: const Text('Settings & Security', style: TextStyle(color: AppColors.onNavy, fontSize: 12.5)),
+                    dense: true,
+                    onTap: () => _showSettingsModal(context, data),
+                  ),
                 ],
               ),
             ),
@@ -897,6 +931,15 @@ class _HomePageState extends State<HomePage> {
                     onTap: () {
                       Navigator.pop(context);
                       _showAcademicRegulationsModal(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.settings_outlined, color: AppColors.muted, size: 20),
+                    title: const Text('Settings & Security', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    dense: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showSettingsModal(context, data);
                     },
                   ),
                 ],
@@ -1072,6 +1115,1487 @@ class _HomePageState extends State<HomePage> {
             child: const Text('Close'),
           ),
         ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // UNIVERSAL USER SETTINGS & SECURITY MODAL (All Roles)
+  // ---------------------------------------------------------------------------
+
+  void _showSettingsModal(BuildContext context, DashboardData data) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final isDesktop = MediaQuery.sizeOf(ctx).width >= 700;
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(ctx).height * 0.88,
+                maxWidth: isDesktop ? 650 : double.infinity,
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: ListView(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.settings, color: AppColors.gold, size: 22),
+                          SizedBox(width: 10),
+                          Text(
+                            'Settings & Preferences',
+                            style: TextStyle(
+                              color: AppColors.onNavy,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.muted),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // User Profile Snapshot
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.surfaceRaised,
+                          child: Text(
+                            data.displayName.isNotEmpty
+                                ? data.displayName.substring(0, 1).toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: AppColors.gold,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data.displayName,
+                                style: const TextStyle(
+                                  color: AppColors.onNavy,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'ID: ${data.userId} • ${_getRoleDisplayName(data.role)}',
+                                style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${data.displayName.toLowerCase().replaceAll(' ', '.')}@fahacademy.cm',
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 1: Security & Credentials
+                  const Text(
+                    'SECURITY & AUTHENTICATION',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.lock_reset, color: AppColors.onNavy),
+                    title: const Text(
+                      'Change Password',
+                      style: TextStyle(color: AppColors.onNavy, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Update your secure account password',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
+                    onTap: () {
+                      _showChangePasswordDialog(ctx);
+                    },
+                  ),
+                  const Divider(color: AppColors.border, height: 1),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    secondary: const Icon(Icons.security, color: AppColors.onNavy),
+                    title: const Text(
+                      'Two-Factor Authentication (2FA)',
+                      style: TextStyle(color: AppColors.onNavy, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Require SMS or Authenticator verification on login',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                    activeColor: AppColors.gold,
+                    value: true,
+                    onChanged: (val) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            val
+                                ? 'Two-Factor Authentication activated.'
+                                : 'Two-Factor Authentication deactivated.',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 2: Localization & HCI Accessibility
+                  const Text(
+                    'LOCALIZATION & HCI ACCESSIBILITY',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'System Language (Bilingual Cameroon)',
+                          style: TextStyle(
+                            color: AppColors.onNavy,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text('English (Cameroon)')),
+                                selected: _appLanguage == 'English (Cameroon)',
+                                selectedColor: AppColors.gold,
+                                labelStyle: TextStyle(
+                                  color: _appLanguage == 'English (Cameroon)'
+                                      ? AppColors.navyDeep
+                                      : AppColors.onNavy,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                ),
+                                onSelected: (sel) {
+                                  if (sel) {
+                                    setState(() => _appLanguage = 'English (Cameroon)');
+                                    setModalState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Center(child: Text('Français (Cameroun)')),
+                                selected: _appLanguage == 'Français (Cameroun)',
+                                selectedColor: AppColors.gold,
+                                labelStyle: TextStyle(
+                                  color: _appLanguage == 'Français (Cameroun)'
+                                      ? AppColors.navyDeep
+                                      : AppColors.onNavy,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.5,
+                                ),
+                                onSelected: (sel) {
+                                  if (sel) {
+                                    setState(() => _appLanguage = 'Français (Cameroun)');
+                                    setModalState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    secondary: const Icon(Icons.contrast, color: AppColors.onNavy),
+                    title: const Text(
+                      'HCI High-Contrast Mode',
+                      style: TextStyle(color: AppColors.onNavy, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Enhanced contrast for high-sunlight or low-vision readability',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                    activeColor: AppColors.gold,
+                    value: _highContrastHciMode,
+                    onChanged: (val) {
+                      setState(() => _highContrastHciMode = val);
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 3: Notification Toggles
+                  const Text(
+                    'NOTIFICATION PREFERENCES',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Continuous Assessment (CA) & Exam Alerts',
+                        style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
+                    subtitle: const Text('Instant alerts when CA or terminal exam marks are published',
+                        style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                    activeColor: AppColors.gold,
+                    value: _notificationsCaAlerts,
+                    onChanged: (val) {
+                      setState(() => _notificationsCaAlerts = val);
+                      setModalState(() {});
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Bursary & Fee Clearance Alerts',
+                        style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
+                    subtitle: const Text('Notifications when bank slips (UBA/Afriland) are verified',
+                        style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                    activeColor: AppColors.gold,
+                    value: _notificationsFeeAlerts,
+                    onChanged: (val) {
+                      setState(() => _notificationsFeeAlerts = val);
+                      setModalState(() {});
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Lecture Timetable & Hall Allocations',
+                        style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
+                    subtitle: const Text('Updates on schedule changes or lecture hall shifts',
+                        style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                    activeColor: AppColors.gold,
+                    value: _notificationsTimetableAlerts,
+                    onChanged: (val) {
+                      setState(() => _notificationsTimetableAlerts = val);
+                      setModalState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Institutional Compliance Info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'MINESUP Institutional Compliance',
+                          style: TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Accreditation: Republic of Cameroon Ministry of Higher Education • Harmonized Senate Framework 2026/2027.',
+                          style: TextStyle(color: AppColors.muted, fontSize: 10, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Sign Out
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFF87171),
+                        side: const BorderSide(color: Color(0xFFF87171)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _handleSignOut();
+                      },
+                      icon: const Icon(Icons.logout, size: 18),
+                      label: const Text(
+                        'Sign Out of Account',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext parentContext) {
+    final currentPwController = TextEditingController();
+    final newPwController = TextEditingController();
+    final confirmPwController = TextEditingController();
+
+    showDialog(
+      context: parentContext,
+      builder: (dlgCtx) => AlertDialog(
+        backgroundColor: AppColors.navyDeep,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_outline, color: AppColors.gold),
+            SizedBox(width: 8),
+            Text('Change Password', style: TextStyle(color: AppColors.onNavy, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPwController,
+              obscureText: true,
+              style: const TextStyle(color: AppColors.onNavy, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Current Password',
+                labelStyle: TextStyle(color: AppColors.muted, fontSize: 12),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: newPwController,
+              obscureText: true,
+              style: const TextStyle(color: AppColors.onNavy, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'New Password',
+                labelStyle: TextStyle(color: AppColors.muted, fontSize: 12),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: confirmPwController,
+              obscureText: true,
+              style: const TextStyle(color: AppColors.onNavy, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Confirm New Password',
+                labelStyle: TextStyle(color: AppColors.muted, fontSize: 12),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgCtx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.muted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.navyDeep,
+            ),
+            onPressed: () {
+              Navigator.pop(dlgCtx);
+              ScaffoldMessenger.of(parentContext).showSnackBar(
+                const SnackBar(
+                  content: Text('✓ Password successfully updated and encrypted.'),
+                  backgroundColor: AppColors.surfaceRaised,
+                ),
+              );
+            },
+            child: const Text('Update Password'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getRoleDisplayName(DashboardRole role) => role.label;
+
+  // ---------------------------------------------------------------------------
+  // OFFICIAL PDF DOCUMENT GENERATION & EXPORT (Cameroon Higher Education Standard)
+  // ---------------------------------------------------------------------------
+
+  void _downloadDocumentAsPdf({
+    required BuildContext context,
+    required String title,
+    required String fileName,
+    required String rawText,
+  }) {
+    Clipboard.setData(ClipboardData(text: rawText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.picture_as_pdf, color: AppColors.gold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '✓ $title ($fileName) downloaded & official text copied to clipboard.',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF13204D),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // 1. Official Results Slip PDF Modal
+  void _showResultsPdfModal(BuildContext context, DashboardData data) {
+    final docText = '''
+================================================================================
+REPUBLIC OF CAMEROON                             REPUBLIQUE DU CAMEROUN
+Peace - Work - Fatherland                         Paix - Travail - Patrie
+MINISTRY OF HIGHER EDUCATION                     MINISTERE DE L'ENSEIGNEMENT SUPERIEUR
+--------------------------------------------------------------------------------
+                     FAH ACADEMY - FACULTY OF ENGINEERING
+                 ACADEMIC TRANSCRIPT & STATEMENT OF RESULTS
+================================================================================
+Student Name:       Clarisse M. Fong
+Matricule / ID:     FAH-2024-SW0482
+Degree / Program:   B.Eng Software Engineering
+Academic Year:      2026/2027 • Semester 2
+Class Level:        Level 200 (Year 2)
+--------------------------------------------------------------------------------
+COURSE CODE | COURSE TITLE                       | CR | CA/30 | EX/70 | TOT | GR | GP
+--------------------------------------------------------------------------------
+SWE201      | Advanced Data Structures           | 4  | 28.5  | 62.0  | 90.5| A  | 4.00
+SWE203      | Object-Oriented Software Design    | 3  | 27.0  | 59.0  | 86.0| A  | 4.00
+CEF205      | Digital Logic & Microprocessors    | 4  | 24.0  | 52.0  | 76.0| B+ | 3.50
+ICT207      | Computer Networks & Architecture   | 3  | 26.0  | 55.0  | 81.0| A  | 4.00
+--------------------------------------------------------------------------------
+SEMESTER GPA:       3.82 / 4.00
+CUMULATIVE CGPA:    3.75 / 4.00
+EARNED CREDITS:     21 / 21 S2 Units
+ACADEMIC STANDING:  FIRST CLASS HONOURS (HONOUR ROLL)
+PENDING RESITS:     0
+--------------------------------------------------------------------------------
+AUTHENTICATION SEAL: MINESUP-CMR-2026-FONG-9921
+DEAN OF FACULTY:     Prof. E. T. Tamba (Ph.D)
+REGISTRAR:           Dr. Beatrice M. Ngu
+ISSUED DATE:         October 2026
+================================================================================
+''';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.92,
+            maxWidth: 750,
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf, color: AppColors.gold, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Official Result Slip (MINESUP Standard)',
+                        style: TextStyle(
+                          color: AppColors.onNavy,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.muted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0C1536),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.6)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Official Letterhead
+                        Center(
+                          child: Column(
+                            children: [
+                              const Text(
+                                'REPUBLIC OF CAMEROON • REPUBLIQUE DU CAMEROUN\nPeace - Work - Fatherland • Paix - Travail - Patrie\nMINISTRY OF HIGHER EDUCATION (MINESUP)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gold.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: AppColors.gold),
+                                ),
+                                child: const Text(
+                                  'FAH ACADEMY • STATEMENT OF SEMESTER RESULTS',
+                                  style: TextStyle(
+                                    color: AppColors.gold,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+
+                        // Student Info Grid
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('STUDENT NAME', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                                Text('Clarisse M. Fong', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 13)),
+                                SizedBox(height: 6),
+                                Text('DEGREE PROGRAM', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                                Text('B.Eng Software Engineering', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('MATRICULE NO', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                                Text('FAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13)),
+                                SizedBox(height: 6),
+                                Text('ACADEMIC YEAR & SEMESTER', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                                Text('2026/2027 • Level 200 • Sem 2', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+
+                        // Course Marks Table
+                        const Text('COURSE PERFORMANCE (CA: 30% • EXAM: 70%)',
+                            style: TextStyle(color: AppColors.gold, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        _buildPdfResultRow('SWE201', 'Advanced Data Structures', '4 Cr', '28.5', '62.0', '90.5', 'A', '4.00'),
+                        _buildPdfResultRow('SWE203', 'Object-Oriented Software Design', '3 Cr', '27.0', '59.0', '86.0', 'A', '4.00'),
+                        _buildPdfResultRow('CEF205', 'Digital Logic & Microprocessors', '4 Cr', '24.0', '52.0', '76.0', 'B+', '3.50'),
+                        _buildPdfResultRow('ICT207', 'Computer Networks & Arch.', '3 Cr', '26.0', '55.0', '81.0', 'A', '4.00'),
+
+                        const SizedBox(height: 14),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+
+                        // Summary Statistics
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF13204D),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  Text('SEMESTER GPA', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('3.82 / 4.00', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 16)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text('CUMULATIVE CGPA', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('3.75 / 4.00', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 16)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text('ACADEMIC STANDING', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('1st Class Honours', style: TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 13)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        // Signatures & Official Stamp
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: AppColors.gold, width: 1.5),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('SENATE AUTHENTICATION', style: TextStyle(color: AppColors.gold, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      Text('SEAL: MINESUP-CMR-2026-FONG', style: TextStyle(color: AppColors.muted, fontSize: 8)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('Prof. E. T. Tamba (Ph.D)', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 11)),
+                                Text('Dean, Faculty of Engineering', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                                SizedBox(height: 2),
+                                Text('Dr. Beatrice M. Ngu', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 11)),
+                                Text('Registrar / Academic Affairs', style: TextStyle(color: AppColors.muted, fontSize: 9.5)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyDeep,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        _downloadDocumentAsPdf(
+                          context: context,
+                          title: 'Official Result Slip',
+                          fileName: 'MINESUP_Result_Slip_FAH2024SW0482.pdf',
+                          rawText: docText,
+                        );
+                      },
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Download PDF Document', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.onNavy,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPdfResultRow(String code, String title, String cr, String ca, String exam, String total, String grade, String gp) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 60,
+            child: Text(code, style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 11)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.onNavy, fontSize: 11)),
+                Text('$cr • CA: $ca/30 • Exam: $exam/70', style: const TextStyle(color: AppColors.muted, fontSize: 9.5)),
+              ],
+            ),
+          ),
+          Text(total, style: const TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.navyDeep,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+            ),
+            child: Text(grade, style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 10.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 2. Official Timetable PDF Modal
+  void _showTimetablePdfModal(BuildContext context) {
+    const timetableText = '''
+================================================================================
+FAH ACADEMY • CAMEROON
+FACULTY OF ENGINEERING & COMPUTING • LEVEL 200 (YEAR 2)
+MASTER LECTURE & VENUE TIMETABLE • SEMESTER 2 • 2026/2027
+================================================================================
+MONDAY:
+  • 10:00 - 12:00 | SWE201: Advanced Data Structures   | Hall B-104 | Dr. Raymond Vance
+  • 14:00 - 16:00 | SWE203: Object-Oriented Design     | Lab 3      | Dr. Raymond Vance
+
+TUESDAY:
+  • 08:00 - 10:00 | ICT207: Computer Networks & Arch.  | Hall A-102 | Prof. Samuel E. Mbella
+  • 11:00 - 13:00 | MAT205: Linear Algebra & Calculus  | Amphithéâtre 1 | Dr. Paul F. Tiku
+
+WEDNESDAY:
+  • 08:00 - 10:00 | CEF205: Digital Logic & Microproc. | Hall A-201 | Dr. Beatrice M. Ngu
+  • 14:00 - 17:00 | SWE201: Algorithmic Lab Practical  | Software Lab 2 | Engr. K. Fong
+
+THURSDAY:
+  • 10:00 - 12:00 | SWE207: Software Testing & QA      | Computer Lab 1 | Dr. Raymond Vance
+  • 14:00 - 16:00 | CEF205: Hardware Architecture TP   | Electronics Lab | Dr. Beatrice M. Ngu
+
+FRIDAY:
+  • 14:00 - 16:00 | GES201: Bilingual English/French   | Room 108   | Mme. A. Ngozi
+--------------------------------------------------------------------------------
+AUTHORIZED BY: Timetable & Venue Allocation Senate Committee
+ISSUED: October 2026 • Valid for Academic Term 2026/2027
+================================================================================
+''';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.90,
+            maxWidth: 750,
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.calendar_month, color: AppColors.gold, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Master Lecture Timetable (Official PDF)',
+                        style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.muted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0C1536),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Center(
+                          child: Text(
+                            'FAH ACADEMY • LEVEL 200 (YEAR 2) TIMETABLE\nFaculty of Engineering & Computing • Semester 2',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+
+                        _buildTimetableDayBlock('Monday', [
+                          ('SWE201: Advanced Data Structures', '10:00 - 12:00', 'Hall B-104', 'Dr. Raymond Vance'),
+                          ('SWE203: Object-Oriented Software Design', '14:00 - 16:00', 'Software Lab 3', 'Dr. Raymond Vance'),
+                        ]),
+                        _buildTimetableDayBlock('Tuesday', [
+                          ('ICT207: Computer Networks & Telecom', '08:00 - 10:00', 'Hall A-102', 'Prof. Samuel E. Mbella'),
+                          ('MAT205: Linear Algebra & Matrices', '11:00 - 13:00', 'Amphi 1', 'Dr. Paul F. Tiku'),
+                        ]),
+                        _buildTimetableDayBlock('Wednesday', [
+                          ('CEF205: Digital Logic & Microprocessors', '08:00 - 10:00', 'Hall A-201', 'Dr. Beatrice M. Ngu'),
+                          ('SWE201: Practical Lab Session', '14:00 - 17:00', 'Software Lab 2', 'Engr. K. Fong'),
+                        ]),
+                        _buildTimetableDayBlock('Thursday', [
+                          ('SWE207: Software Testing & QA', '10:00 - 12:00', 'Lab 1', 'Dr. Raymond Vance'),
+                        ]),
+                        _buildTimetableDayBlock('Friday', [
+                          ('GES201: Bilingual Professional English/French', '14:00 - 16:00', 'Room 108', 'Mme. A. Ngozi'),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyDeep,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        _downloadDocumentAsPdf(
+                          context: context,
+                          title: 'Master Lecture Timetable',
+                          fileName: 'FAH_Academy_L200_Timetable_S2.pdf',
+                          rawText: timetableText,
+                        );
+                      },
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Download Timetable (PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.onNavy,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimetableDayBlock(String day, List<(String, String, String, String)> slots) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(day.toUpperCase(), style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          ...slots.map((s) => Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF13204D),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.navyDeep,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(s.$2, style: const TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.$1, style: const TextStyle(color: AppColors.onNavy, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      Text('${s.$3} • ${s.$4}', style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  // 3. Official Fee Clearance & Treasury Receipt PDF Modal
+  void _showFeeReceiptPdfModal(BuildContext context, DashboardData data) {
+    const feeReceiptText = '''
+================================================================================
+FAH ACADEMY BURSARY & TREASURY BOARD
+OFFICIAL TUITION PAYMENT RECEIPT & CLEARANCE SLIP (FCFA)
+ACADEMIC YEAR 2026/2027 • FIRST & SECOND SEMESTERS
+================================================================================
+STUDENT DETAILS:
+  • Name:             Clarisse M. Fong
+  • Matricule / ID:   FAH-2024-SW0482
+  • Department:       Software Engineering
+  • Academic Level:   Level 200 (Year 2)
+
+FEE INVOICE & PAYMENT LEDGER:
+  • Total Annual Tuition:    650,000 FCFA
+  • Total Amount Cleared:    450,000 FCFA (69.2% Cleared)
+  • Remaining Balance:       200,000 FCFA
+
+TRANSACTION DETAILS:
+  1. Oct 16, 2026: 250,000 FCFA • UBA Cameroon Deposit (Slip: UBA-CM-2026-99452)
+  2. Oct 18, 2026: 200,000 FCFA • Afriland First Bank Deposit (Slip: AFB-DLA-44109)
+
+EXAMINATION CLEARANCE STATUS:
+  [ ✓ GRANTED ] ELIGIBLE TO SIT FOR TERMINAL SEMESTER EXAMINATIONS
+  (Institutional 60% Clearance Threshold Met)
+
+BURSAR AUTHENTICATION SEAL: BA01-FE22-BA
+OFFICER IN CHARGE:          Dr. Beatrice M. Ngu (Treasury Comptroller)
+DATE OF ISSUANCE:           October 2026
+================================================================================
+''';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.90,
+            maxWidth: 750,
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.receipt_long, color: AppColors.gold, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Bursary Clearance Receipt (Official PDF)',
+                        style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: AppColors.muted),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0C1536),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Center(
+                          child: Text(
+                            'FAH ACADEMY • BURSARY AUDIT DESK\nOFFICIAL TUITION PAYMENT RECEIPT & CLEARANCE',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('STUDENT: Clarisse M. Fong', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('MAT: FAH-2024-SW0482', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Ledger summary
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF13204D),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              Column(
+                                children: [
+                                  Text('TOTAL INVOICED', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('650,000 FCFA', style: TextStyle(color: AppColors.onNavy, fontWeight: FontWeight.bold, fontSize: 14)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text('TOTAL SETTLED', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('450,000 FCFA', style: TextStyle(color: Color(0xFF4ADE80), fontWeight: FontWeight.bold, fontSize: 14)),
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  Text('BALANCE', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                                  SizedBox(height: 2),
+                                  Text('200,000 FCFA', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 14)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+                        const Text('VALIDATED BANK DEPOSITS', style: TextStyle(color: AppColors.gold, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        _buildFeeDepositItem('UBA Cameroon Deposit', '250,000 FCFA', 'Slip: UBA-CM-2026-99452 • Oct 16, 2026', 'Verified'),
+                        _buildFeeDepositItem('Afriland First Bank Wire', '200,000 FCFA', 'Slip: AFB-DLA-44109 • Oct 18, 2026', 'Verified'),
+
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF152A20),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF4ADE80).withValues(alpha: 0.5)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Color(0xFF4ADE80), size: 18),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'EXAMINATION ELIGIBILITY: APPROVED\nStudent has exceeded the institutional 60% minimum fee threshold for Terminal Examination clearance.',
+                                  style: TextStyle(color: Color(0xFF4ADE80), fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.3),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('BURSAR SEAL: BA01-FE22-BA', style: TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.bold)),
+                            Text('Dr. Beatrice M. Ngu • Bursary Desk', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: AppColors.navyDeep,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        _downloadDocumentAsPdf(
+                          context: context,
+                          title: 'Bursary Clearance Receipt',
+                          fileName: 'FAH_Bursary_Clearance_FAH2024SW0482.pdf',
+                          rawText: feeReceiptText,
+                        );
+                      },
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Download Official Receipt (PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.onNavy,
+                      side: const BorderSide(color: AppColors.border),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFeeDepositItem(String title, String amount, String sub, String status) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(color: AppColors.onNavy, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 9.5)),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(amount, style: const TextStyle(color: AppColors.gold, fontSize: 11.5, fontWeight: FontWeight.bold)),
+              Text(status, style: const TextStyle(color: Color(0xFF4ADE80), fontSize: 9.5, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 4. Form 74 Course Registration PDF Modal
+  void _showCourseRegistrationPdfModal(BuildContext context, DashboardData data) {
+    const regText = '''
+================================================================================
+FAH ACADEMY • REPUBLIC OF CAMEROON
+FORM 74: SEMESTER COURSE REGISTRATION & EXAMINATION CARD
+ACADEMIC YEAR 2026/2027 • SEMESTER 2
+================================================================================
+STUDENT NAME: Clarisse M. Fong
+MATRICULE:    FAH-2024-SW0482
+PROGRAM:      B.Eng Software Engineering (Level 200 / Year 2)
+TOTAL LOAD:   21 Credit Units
+--------------------------------------------------------------------------------
+REGISTERED COURSES:
+  1. SWE201: Advanced Data Structures (4 Credits) • Lecturer: Dr. Raymond Vance
+  2. SWE203: Object-Oriented Software Design (3 Credits) • Lecturer: Dr. Raymond Vance
+  3. CEF205: Digital Logic & Microprocessors (4 Credits) • Lecturer: Dr. Beatrice M. Ngu
+  4. ICT207: Computer Networks & Protocols (3 Credits) • Lecturer: Prof. Samuel E. Mbella
+  5. SWE207: Software Testing & QA (4 Credits) • Lecturer: Dr. Raymond Vance
+  6. GES201: Professional Communication (3 Credits) • Lecturer: Mme. A. Ngozi
+--------------------------------------------------------------------------------
+STUDENT SIGNATURE:     [ Validated Digitally ]
+ACADEMIC ADVISOR:      Dr. Raymond Vance
+HEAD OF DEPARTMENT:    Prof. E. T. Tamba
+REGISTRAR APPROVAL:    MINESUP-REG-74-VALIDATED
+================================================================================
+''';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(ctx).height * 0.88,
+          maxWidth: 700,
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.assignment_turned_in, color: AppColors.gold, size: 22),
+                    SizedBox(width: 8),
+                    Text('Form 74 Course Registration Slip', style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: AppColors.muted), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C1536),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Text(
+                    regText,
+                    style: TextStyle(color: AppColors.muted, fontFamily: 'monospace', fontSize: 11, height: 1.4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDeep,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                _downloadDocumentAsPdf(
+                  context: context,
+                  title: 'Form 74 Course Registration Slip',
+                  fileName: 'FAH_Form74_Course_Registration.pdf',
+                  rawText: regText,
+                );
+              },
+              icon: const Icon(Icons.download, size: 18),
+              label: const Text('Download Form 74 (PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 5. Faculty Grade Broadsheet PDF Modal
+  void _showGradeBroadsheetPdfModal(BuildContext context, String courseCode) {
+    const broadsheetText = '''
+================================================================================
+FAH ACADEMY • SENATE EXAMINATION BOARD
+OFFICIAL GRADE BROADSHEET • CONTINUOUS ASSESSMENT & TERMINAL EXAMINATION
+================================================================================
+COURSE:     SWE201 - Advanced Data Structures (4 Credit Units)
+LECTURER:   Dr. Raymond Vance (Staff ID: FAH-FAC-014)
+SEMESTER:   2026/2027 Semester 2 • Class: Level 200 (Cohort A)
+--------------------------------------------------------------------------------
+MATRICULE       | STUDENT NAME         | CA /30 | EX /70 | TOTAL | GRADE | STATUS
+--------------------------------------------------------------------------------
+FAH-2026-SV0482 | Brenda N. Tabi       | 28.5   | 62.0   | 90.5  | A     | PASSED
+FAH-2026-SV0419 | Emmanuel K. Che      | 26.0   | 58.0   | 84.0  | A     | PASSED
+FAH-2026-SV0390 | Divine F. Ayuk       | 24.5   | 51.5   | 76.0  | B+    | PASSED
+FAH-2026-SV0532 | Marcelle O. Ndong    | 12.0   | 24.0   | 36.0  | F     | RESIT
+FAH-2026-SV0441 | Boris T. Enow        | 22.0   | 48.0   | 70.0  | B+    | PASSED
+--------------------------------------------------------------------------------
+SENATE COMPLIANCE: 80% Pass Rate • 1 Flagged Resit • Harmonized 4.0 GP Scale
+SUBMITTED BY:      Dr. Raymond Vance (Designated Lecturer)
+SEAL CODE:         SENATE-SWE201-2026-VANCE
+================================================================================
+''';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navyDeep,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(ctx).height * 0.88,
+          maxWidth: 700,
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.assessment, color: AppColors.gold, size: 22),
+                    SizedBox(width: 8),
+                    Text('Senate Grade Broadsheet (SWE201)', style: TextStyle(color: AppColors.onNavy, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close, color: AppColors.muted), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C1536),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Text(
+                    broadsheetText,
+                    style: TextStyle(color: AppColors.muted, fontFamily: 'monospace', fontSize: 11, height: 1.4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.navyDeep,
+                minimumSize: const Size(double.infinity, 44),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                _downloadDocumentAsPdf(
+                  context: context,
+                  title: 'Senate Grade Broadsheet',
+                  fileName: 'Senate_Broadsheet_SWE201.pdf',
+                  rawText: broadsheetText,
+                );
+              },
+              icon: const Icon(Icons.download, size: 18),
+              label: const Text('Download Broadsheet (PDF)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2390,6 +3914,21 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.gold,
+                    side: const BorderSide(color: AppColors.gold),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () => _showCourseRegistrationPdfModal(context, data),
+                  icon: const Icon(Icons.picture_as_pdf, size: 16),
+                  label: const Text('Download Course Registration Slip (Form 74 PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ),
               const SizedBox(height: 4),
               const Text(
                 'Submissions require institutional server validation',
@@ -3063,9 +4602,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Downloading Official Statement PDF...')),
-            );
+            _showFeeReceiptPdfModal(context, data);
           },
           icon: const Icon(Icons.download, size: 18, color: AppColors.gold),
           label: const Text(
@@ -3632,9 +5169,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Downloading Official Result Slip (PDF)...')),
-            );
+            _showResultsPdfModal(context, data);
           },
           icon: const Icon(Icons.picture_as_pdf, size: 18),
           label: const Text(
@@ -4324,7 +5859,25 @@ class _HomePageState extends State<HomePage> {
               'Friday: SW211 (14:00 - 16:00) • Room 108',
               style: TextStyle(color: AppColors.muted, height: 1.5),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyDeep,
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showTimetablePdfModal(context);
+                },
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text('Download Timetable (Official PDF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -4603,6 +6156,8 @@ class _HomePageState extends State<HomePage> {
                   _handleSignOut();
                 } else if (val == 'handbook') {
                   _showAcademicRegulationsModal(context);
+                } else if (val == 'settings') {
+                  _showSettingsModal(context, data);
                 }
               },
               itemBuilder: (ctx) => [
@@ -4638,6 +6193,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_outlined, color: AppColors.gold, size: 18),
+                      SizedBox(width: 8),
+                      Text('Settings & Preferences', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'handbook',
                   child: Row(
@@ -5953,19 +7518,12 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('✓ Grade sheet draft autosaved at 14:32 (40 entries cached).'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.description_outlined, size: 14, color: AppColors.onNavy),
-                        label: const Text('Draft', style: TextStyle(color: AppColors.onNavy, fontSize: 12)),
+                        onPressed: () => _showGradeBroadsheetPdfModal(context, 'SWE201'),
+                        icon: const Icon(Icons.picture_as_pdf, size: 14, color: AppColors.gold),
+                        label: const Text('PDF Slip', style: TextStyle(color: AppColors.gold, fontSize: 11.5, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
                           backgroundColor: const Color(0xFF13204D),
-                          side: BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+                          side: const BorderSide(color: AppColors.gold),
                           padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
@@ -6186,16 +7744,134 @@ class _HomePageState extends State<HomePage> {
       {'name': 'Boris T. Enow', 'mat': 'FAH-2026-SV0441', 'default': 'present'},
     ];
 
+    // Lecturer Course-Level Authorization Check:
+    // Only designated lecturer (Dr. Raymond Vance) assigned to SWE201 / SWE101 can mark attendance!
+    final isAssigned = _selectedAttendanceCourseCode == 'SWE201' || _selectedAttendanceCourseCode == 'SWE101';
+    final courseInstructor = (_selectedAttendanceCourseCode == 'SWE201' || _selectedAttendanceCourseCode == 'SWE101')
+        ? 'Dr. Raymond Vance (You)'
+        : (_selectedAttendanceCourseCode == 'CEF205'
+            ? 'Dr. Beatrice M. Ngu (Staff ID: FAH-FAC-008)'
+            : 'Prof. Samuel E. Mbella (Staff ID: FAH-FAC-003)');
+
+    final courseTitle = _selectedAttendanceCourseCode == 'SWE201'
+        ? 'Advanced Data Structures'
+        : (_selectedAttendanceCourseCode == 'SWE101'
+            ? 'Intro to Programming & Algorithms'
+            : (_selectedAttendanceCourseCode == 'CEF205'
+                ? 'Digital Logic & Microprocessors'
+                : 'Computer Networks & Protocols'));
+
+    final courseVenue = _selectedAttendanceCourseCode == 'SWE201'
+        ? 'Hall B-104 • Campus A'
+        : (_selectedAttendanceCourseCode == 'SWE101'
+            ? 'Amphithéâtre 2 • Campus B'
+            : (_selectedAttendanceCourseCode == 'CEF205'
+                ? 'Hall A-201 • Tech Block'
+                : 'Lab 1 • Networking Center'));
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
       children: [
+        // Course Selector Header (Role Authorization Selector)
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13204D),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'SELECT TEACHING MODULE',
+                    style: TextStyle(
+                      color: AppColors.gold,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  Text(
+                    'Senate Authorization Rule',
+                    style: TextStyle(color: AppColors.muted, fontSize: 10),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildAttendanceCourseChip('SWE201 (Assigned)', 'SWE201', true),
+                    const SizedBox(width: 8),
+                    _buildAttendanceCourseChip('SWE101 (Assigned)', 'SWE101', true),
+                    const SizedBox(width: 8),
+                    _buildAttendanceCourseChip('CEF205 (Dr. Ngu)', 'CEF205', false),
+                    const SizedBox(width: 8),
+                    _buildAttendanceCourseChip('ICT207 (Prof. Mbella)', 'ICT207', false),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Instructor Authorization Warning if not assigned to this course
+        if (!isAssigned) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF261517),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF87171), width: 1.2),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lock, color: Color(0xFFF87171), size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '🔒 READ-ONLY AUDIT MODE: ${_selectedAttendanceCourseCode.toUpperCase()}',
+                        style: const TextStyle(
+                          color: Color(0xFFF87171),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'You are NOT the assigned lecturer for this course. Under Cameroon MINESUP & Senate Regulations, only $courseInstructor is authorized to register and seal attendance.',
+                        style: const TextStyle(color: AppColors.muted, fontSize: 11, height: 1.35),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         // Live Check-in Session Header
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: const Color(0xFF13204D),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.gold, width: 1.2),
+            border: Border.all(
+              color: isAssigned ? AppColors.gold : AppColors.border,
+              width: isAssigned ? 1.2 : 1.0,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -6206,34 +7882,34 @@ class _HomePageState extends State<HomePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.gold,
+                      color: isAssigned ? AppColors.gold : AppColors.surface,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
-                      'ACTIVE SESSION',
+                    child: Text(
+                      isAssigned ? 'ACTIVE SESSION • WRITE ACCESS' : 'AUDIT SESSION • LOCKED',
                       style: TextStyle(
-                        color: AppColors.navyDeep,
+                        color: isAssigned ? AppColors.navyDeep : AppColors.muted,
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                  const Text('Hall B-104 • Campus A', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+                  Text(courseVenue, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'SW201 • Advanced Data Structures',
-                style: TextStyle(
+              Text(
+                '$_selectedAttendanceCourseCode • $courseTitle',
+                style: const TextStyle(
                   color: AppColors.onNavy,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 3),
-              const Text(
-                'SEL200 (Cohort A) • 38 Students • Today, 10:00 AM – 12:00 PM',
-                style: TextStyle(color: AppColors.muted, fontSize: 11),
+              Text(
+                'Instructor: $courseInstructor • 38 Students Enrolled',
+                style: const TextStyle(color: AppColors.muted, fontSize: 11),
               ),
               const SizedBox(height: 12),
               Row(
@@ -6307,6 +7983,16 @@ class _HomePageState extends State<HomePage> {
             ),
             GestureDetector(
               onTap: () {
+                if (!isAssigned) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('🔒 Access Denied: Only $courseInstructor can mark attendance for $_selectedAttendanceCourseCode.'),
+                      backgroundColor: const Color(0xFF261517),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
                 setState(() {
                   for (final s in students) {
                     _attendanceMap[s['mat'] as String] = 'present';
@@ -6314,15 +8000,15 @@ class _HomePageState extends State<HomePage> {
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('All students marked Present.'),
+                    content: Text('All students marked Present for active session.'),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Mark All Present',
                 style: TextStyle(
-                  color: AppColors.gold,
+                  color: isAssigned ? AppColors.gold : AppColors.muted,
                   fontSize: 11.5,
                   fontWeight: FontWeight.bold,
                 ),
@@ -6373,21 +8059,57 @@ class _HomePageState extends State<HomePage> {
                       label: 'P',
                       isActive: status == 'present',
                       activeColor: const Color(0xFF4ADE80),
-                      onTap: () => setState(() => _attendanceMap[mat] = 'present'),
+                      onTap: () {
+                        if (!isAssigned) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('🔒 Unauthorized: Only $courseInstructor can modify $_selectedAttendanceCourseCode attendance.'),
+                              backgroundColor: const Color(0xFF261517),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _attendanceMap[mat] = 'present');
+                      },
                     ),
                     const SizedBox(width: 4),
                     _buildAttendanceToggleButton(
                       label: 'L',
                       isActive: status == 'late',
                       activeColor: AppColors.gold,
-                      onTap: () => setState(() => _attendanceMap[mat] = 'late'),
+                      onTap: () {
+                        if (!isAssigned) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('🔒 Unauthorized: Only $courseInstructor can modify $_selectedAttendanceCourseCode attendance.'),
+                              backgroundColor: const Color(0xFF261517),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _attendanceMap[mat] = 'late');
+                      },
                     ),
                     const SizedBox(width: 4),
                     _buildAttendanceToggleButton(
                       label: 'A',
                       isActive: status == 'absent',
                       activeColor: const Color(0xFFF87171),
-                      onTap: () => setState(() => _attendanceMap[mat] = 'absent'),
+                      onTap: () {
+                        if (!isAssigned) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('🔒 Unauthorized: Only $courseInstructor can modify $_selectedAttendanceCourseCode attendance.'),
+                              backgroundColor: const Color(0xFF261517),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _attendanceMap[mat] = 'absent');
+                      },
                     ),
                   ],
                 ),
@@ -6401,25 +8123,78 @@ class _HomePageState extends State<HomePage> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✓ Attendance successfully synchronized to Faculty Register.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onPressed: isAssigned
+                ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✓ Attendance successfully synchronized for $_selectedAttendanceCourseCode.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                : () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('🔒 Action Restricted: Only assigned instructor $courseInstructor can submit attendance.'),
+                        backgroundColor: const Color(0xFF261517),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.gold,
-              foregroundColor: AppColors.navyDeep,
+              backgroundColor: isAssigned ? AppColors.gold : AppColors.surface,
+              foregroundColor: isAssigned ? AppColors.navyDeep : AppColors.muted,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Save & Synchronize Attendance', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              isAssigned ? 'Save & Synchronize Attendance' : '🔒 Read-Only (Restricted to $courseInstructor)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: isAssigned ? 13 : 11.5),
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAttendanceCourseChip(String label, String code, bool isAssigned) {
+    final selected = _selectedAttendanceCourseCode == code;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedAttendanceCourseCode = code),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? (isAssigned ? AppColors.gold : const Color(0xFFF87171))
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? (isAssigned ? AppColors.gold : const Color(0xFFF87171))
+                : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isAssigned) ...[
+              Icon(Icons.lock, size: 12, color: selected ? Colors.white : AppColors.muted),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? (isAssigned ? AppColors.navyDeep : Colors.white)
+                    : AppColors.onNavy,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -7405,6 +9180,8 @@ class _HomePageState extends State<HomePage> {
                   _handleSignOut();
                 } else if (val == 'handbook') {
                   _showAcademicRegulationsModal(context);
+                } else if (val == 'settings') {
+                  _showSettingsModal(context, data);
                 }
               },
               itemBuilder: (ctx) => [
@@ -7442,6 +9219,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_outlined, color: AppColors.gold, size: 18),
+                      SizedBox(width: 8),
+                      Text('Settings & Preferences', style: TextStyle(color: AppColors.onNavy, fontSize: 13)),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'handbook',
                   child: Row(
@@ -8284,10 +10071,927 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------------------------------------------------------------------
+  // BURSARY AUDIT DESK: BANK RECEIPT VERIFICATION CONSOLE
+  // Pixel-perfect implementation of screen 04fcd5d0 (media_1792579066517)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildBursaryVerificationView(DashboardData data) {
+    final pendingCount = _clarisseCleared ? 13 : 14;
+    final totalPendingAmount = _clarisseCleared ? '3,200,000' : '3,450,000';
+    final clearedTodayCount = _clarisseCleared ? 29 : 28;
+    final clearedTodayAmount = _clarisseCleared ? '7,050,000' : '6,800,000';
+
+    return Stack(
+      children: [
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 100),
+          children: [
+            // Top Navigation & Identity Bar
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _showBursaryVerificationScreen = false),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF13204D),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.arrow_back_ios_new, size: 12, color: AppColors.gold),
+                        SizedBox(width: 6),
+                        Text(
+                          'Treasury Operations',
+                          style: TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.gold),
+                      ),
+                      child: const Text(
+                        'AB-12',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'FAH ACADEMY BURSARY',
+                      style: TextStyle(
+                        color: AppColors.onNavy,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Stack(
+                      children: [
+                        const CircleAvatar(
+                          radius: 15,
+                          backgroundColor: AppColors.surfaceRaised,
+                          child: Text(
+                            'B',
+                            style: TextStyle(
+                              color: AppColors.gold,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF4ADE80),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 6),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dr. Beatrice M. Ngu',
+                          style: TextStyle(
+                            color: AppColors.onNavy,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Treasury Comptroller',
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 9.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Subheader Banner
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF13204D),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Bank Receipt Verification',
+                        style: TextStyle(
+                          color: AppColors.onNavy,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Bursary Audit Desk • Academic Term 2026/2027 S1',
+                        style: TextStyle(color: AppColors.muted, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gold),
+                    ),
+                    child: Text(
+                      '$pendingCount PENDING SLIPS • $totalPendingAmount XAF Total',
+                      style: const TextStyle(
+                        color: AppColors.gold,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // 2x2 Metric Cards Grid
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBursaryMetricCard(
+                    title: 'PENDING INFLOW',
+                    value: '$pendingCount Slips • $totalPendingAmount XAF',
+                    subText: 'Awaiting Treasury Validation',
+                    icon: Icons.hourglass_top,
+                    accentColor: AppColors.gold,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildBursaryMetricCard(
+                    title: 'BANK DISTRIBUTION',
+                    value: 'UBA: 9 • 2.1M / AFB: 5 • 1.35M',
+                    subText: '9 UBA Teller Slips, 5 Afriland',
+                    icon: Icons.account_balance,
+                    accentColor: const Color(0xFF38BDF8),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBursaryMetricCard(
+                    title: 'API BANK FEED',
+                    value: '11 Synced • 55.2% Match',
+                    subText: 'Live Core-Banking Hook Active',
+                    icon: Icons.sync_alt,
+                    accentColor: const Color(0xFF4ADE80),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildBursaryMetricCard(
+                    title: 'CLEARED TODAY',
+                    value: '$clearedTodayCount Slips • $clearedTodayAmount XAF',
+                    subText: '+12.4% vs Yesterday',
+                    icon: Icons.verified,
+                    accentColor: const Color(0xFF4ADE80),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Filter Tabs & Search
+            Row(
+              children: [
+                _buildBursaryFilterChip('Urgent Audit (5)', 0),
+                const SizedBox(width: 8),
+                _buildBursaryFilterChip('All Pending ($pendingCount)', 1),
+                const SizedBox(width: 8),
+                _buildBursaryFilterChip('Flagged (2)', 2),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Search Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0C1536),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search, color: AppColors.muted, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      style: TextStyle(color: AppColors.onNavy, fontSize: 12),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: 'Student matricule, teller ID, slip #...',
+                        hintStyle: TextStyle(color: AppColors.muted, fontSize: 11.5),
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.tune, color: AppColors.gold, size: 16),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // SECTION: PRIORITY VERIFICATION CARD (Slip 1 of 14)
+            if (!_clarisseCleared) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF13204D),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.gold, width: 1.4),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'URGENT AUDIT #1',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'SLIP 1 OF 14',
+                              style: TextStyle(
+                                color: AppColors.gold,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFFEF4444)),
+                          ),
+                          child: const Text(
+                            'Exam Hold Active',
+                            style: TextStyle(
+                              color: Color(0xFFF87171),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Clarisse M. Fong',
+                              style: TextStyle(
+                                color: AppColors.onNavy,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'FAH-2024-SW0467 • B.Eng S.W. (Level 200)',
+                              style: TextStyle(color: AppColors.muted, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '250,000 XAF',
+                              style: TextStyle(
+                                color: AppColors.gold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'UBA - Commercial Ave Branch',
+                              style: TextStyle(color: AppColors.muted, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Physical Slip OCR Scan Preview Box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0C1536),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.document_scanner, color: AppColors.gold, size: 14),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'PHYSICAL SLIP OCR SCAN',
+                                    style: TextStyle(
+                                      color: AppColors.gold,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF152A20),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: const Color(0xFF4ADE80)),
+                                ),
+                                child: const Text(
+                                  'VALIDATED',
+                                  style: TextStyle(
+                                    color: Color(0xFF4ADE80),
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Slip No: UBA-CM-2026-99452 • Date: 18-OCT-2026\n'
+                            'Cashier ID: 8821 • Stamp: TELLER STAMP #44 (Bamenda Commercial Ave)\n'
+                            'Depositor: Clarisse M. Fong • Account: 10033 05200 120409',
+                            style: TextStyle(color: AppColors.muted, fontSize: 10.5, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Live-Core Treasury Auto-Match
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0C1536),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Color(0xFF4ADE80), size: 14),
+                              SizedBox(width: 6),
+                              Text(
+                                '100% Core-Banking Match (Ref: UBA-99452)',
+                                style: TextStyle(
+                                  color: Color(0xFF4ADE80),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Student Fee Ledger Standing:',
+                                style: TextStyle(color: AppColors.muted, fontSize: 10),
+                              ),
+                              Text(
+                                '32% → 100% Complete Clearance',
+                                style: TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(3),
+                            child: const LinearProgressIndicator(
+                              value: 1.0,
+                              backgroundColor: AppColors.surface,
+                              valueColor: AlwaysStoppedAnimation(Color(0xFF4ADE80)),
+                              minHeight: 5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Action Buttons (Flag / Reject vs Verify & Clear)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFF87171),
+                              side: const BorderSide(color: Color(0xFFF87171)),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Slip flagged for manual review with UBA branch auditor.'),
+                                  backgroundColor: Color(0xFF261517),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            child: const Text('Flag / Reject', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.gold,
+                              foregroundColor: AppColors.navyDeep,
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _clarisseCleared = true;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ Deposit UBA-CM-2026-99452 verified. Clarisse M. Fong exam hold released!'),
+                                  backgroundColor: Color(0xFF152A20),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.check, size: 16),
+                            label: const Text('Verify & Clear (250,000 XAF)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              // Cleared state banner for Clarisse
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF152A20),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF4ADE80)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Color(0xFF4ADE80), size: 24),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '✓ VERIFIED & CLEARED: Clarisse M. Fong (250,000 XAF)',
+                            style: TextStyle(
+                              color: Color(0xFF4ADE80),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Treasury seal BA01-FE22-BA applied. Exam clearance slip dispatched to Student Portal.',
+                            style: TextStyle(color: AppColors.muted, fontSize: 10.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _clarisseCleared = false),
+                      child: const Text('Undo', style: TextStyle(color: AppColors.gold, fontSize: 11)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 20),
+
+            // SECTION: SECONDARY QUEUE ITEMS
+            const Text(
+              'PENDING VERIFICATION QUEUE (4 REMAINING)',
+              style: TextStyle(
+                color: AppColors.gold,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            _buildQueueItem(
+              studentName: 'Boris T. Enow',
+              matricule: 'FAH-2024-SW0441 • Level 200',
+              amount: '150,000 XAF',
+              bankName: 'UBA Buea Branch',
+              slipId: 'UBA-44812',
+              actionLabel: 'Quick Verify',
+              isWarning: false,
+            ),
+            _buildQueueItem(
+              studentName: 'Cynthia K. Mbah',
+              matricule: 'FAH-2024-CE0119 • Level 300',
+              amount: '200,000 XAF',
+              bankName: 'Afriland First Bank',
+              slipId: 'AFB-90114',
+              actionLabel: 'Quick Verify',
+              isWarning: false,
+            ),
+            _buildQueueItem(
+              studentName: 'Marcelle O. Ndong',
+              matricule: 'FAH-2024-SW0532 • Level 200',
+              amount: '120,000 XAF',
+              bankName: 'Orange Money Cameroun',
+              slipId: 'OM-77120',
+              warningMessage: 'Amount Mismatch (Invoiced: 150,000 XAF)',
+              actionLabel: 'Audit Slip',
+              isWarning: true,
+            ),
+            _buildQueueItem(
+              studentName: 'Divine F. Ayuk',
+              matricule: 'FAH-2024-SW0390 • Level 200',
+              amount: '75,000 XAF',
+              bankName: 'MTN Cameroon MoMo',
+              slipId: 'MOMO-55219',
+              actionLabel: 'Quick Verify',
+              isWarning: false,
+            ),
+
+            const SizedBox(height: 20),
+
+            // Footer Compliance Notice
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0C1536),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'MINESUP Audit Regulations 2026 • Section 44 Bursary Compliance',
+                    style: TextStyle(color: AppColors.muted, fontSize: 9.5),
+                  ),
+                  Text(
+                    'Bursar Seal: BA01-FE22-BA',
+                    style: TextStyle(color: AppColors.gold, fontSize: 9.5, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        // Floating Bottom Action Bar
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C1536),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.gold, width: 1.2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bolt, color: AppColors.gold, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      '8 Auto-Matched | 2,300,000 XAF Ready',
+                      style: TextStyle(
+                        color: AppColors.onNavy,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.navyDeep,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✓ 8 auto-matched bank slips batch-signed and sealed by Treasury.'),
+                        backgroundColor: Color(0xFF152A20),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: const Text('Batch Sign (8)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBursaryMetricCard({
+    required String title,
+    required String value,
+    required String subText,
+    required IconData icon,
+    required Color accentColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9.5, fontWeight: FontWeight.bold)),
+              Icon(icon, color: accentColor, size: 14),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.onNavy,
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(subText, style: TextStyle(color: accentColor, fontSize: 9.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBursaryFilterChip(String label, int index) {
+    final selected = _bursaryFilterIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _bursaryFilterIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.gold : const Color(0xFF13204D),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.gold : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.navyDeep : AppColors.onNavy,
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQueueItem({
+    required String studentName,
+    required String matricule,
+    required String amount,
+    required String bankName,
+    required String slipId,
+    required String actionLabel,
+    required bool isWarning,
+    String? warningMessage,
+  }) {
+    final isCleared = _clearedBursarySlips.contains(slipId);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF13204D),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isWarning
+              ? const Color(0xFFEF4444).withValues(alpha: 0.7)
+              : AppColors.border.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      studentName,
+                      style: const TextStyle(
+                        color: AppColors.onNavy,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isWarning) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const Text('Mismatch', style: TextStyle(color: Color(0xFFF87171), fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$matricule • $bankName ($slipId)',
+                  style: const TextStyle(color: AppColors.muted, fontSize: 10),
+                ),
+                if (warningMessage != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '⚠ $warningMessage',
+                    style: const TextStyle(color: Color(0xFFFBBF24), fontSize: 9.5, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                amount,
+                style: const TextStyle(
+                  color: AppColors.gold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              isCleared
+                  ? const Text('✓ Cleared', style: TextStyle(color: Color(0xFF4ADE80), fontSize: 11, fontWeight: FontWeight.bold))
+                  : OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isWarning ? const Color(0xFFFBBF24) : AppColors.gold,
+                        side: BorderSide(color: isWarning ? const Color(0xFFFBBF24) : AppColors.gold),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        minimumSize: const Size(60, 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _clearedBursarySlips.add(slipId);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ $studentName ($amount) verified.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: Text(actionLabel, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // TAB 3: TUITION & FINANCE LEDGER (FCFA) (Admin & Super Admin)
   // ---------------------------------------------------------------------------
 
   Widget _buildAdminFinanceTab(DashboardData data) {
+    if (_showBursaryVerificationScreen) {
+      return _buildBursaryVerificationView(data);
+    }
+
     final transactions = [
       const _AdminTransactionRecord(
         txId: 'CM-MOMO-892144',
@@ -8380,6 +11084,65 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
+        ),
+
+        // Bursary Audit Desk Banner (Entry point to Screen 04fcd5d0)
+        Container(
+          margin: const EdgeInsets.only(top: 14, bottom: 4),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13204D),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.gold, width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.verified_outlined, color: AppColors.gold, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _clarisseCleared
+                          ? 'Bursary Audit Desk • 13 Slips Pending'
+                          : 'Bursary Audit Desk • 14 Slips Pending',
+                      style: const TextStyle(
+                        color: AppColors.onNavy,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _clarisseCleared
+                          ? '3,200,000 XAF awaiting teller validation • 29 Slips Cleared Today'
+                          : '3,450,000 XAF awaiting teller validation (UBA & Afriland)',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.navyDeep,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => setState(() => _showBursaryVerificationScreen = true),
+                icon: const Icon(Icons.open_in_new, size: 14),
+                label: const Text('Open Desk', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              ),
+            ],
+          ),
         ),
 
         const SizedBox(height: 16),
