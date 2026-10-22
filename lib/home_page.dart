@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'attendance_register_page.dart';
 import 'dashboard_data.dart';
+import 'role_permission_matrix.dart';
 import 'staff_courses_page.dart';
 import 'staff_dashboard_page.dart';
 import 'staff_profile_page.dart';
@@ -1303,6 +1304,29 @@ class _HomePageState extends State<HomePage> {
                                 ? 'Two-Factor Authentication activated.'
                                 : 'Two-Factor Authentication deactivated.',
                           ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(color: AppColors.border, height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.shield_outlined, color: AppColors.gold),
+                    title: const Text(
+                      'Role-Permission Matrix',
+                      style: TextStyle(color: AppColors.onNavy, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Institutional access matrix for Super Admin, Admin, Lecturer, and Student',
+                      style: TextStyle(color: AppColors.muted, fontSize: 11),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RolePermissionMatrixPage(initialRole: data.role),
                         ),
                       );
                     },
@@ -11578,9 +11602,22 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
           style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.6),
         ),
         actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.shield_outlined, size: 16, color: AppColors.gold),
+            label: const Text('View Role Matrix', style: TextStyle(color: AppColors.gold)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const RolePermissionMatrixPage(initialRole: DashboardRole.superAdmin),
+                ),
+              );
+            },
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Done', style: TextStyle(color: AppColors.gold)),
+            child: const Text('Done', style: TextStyle(color: AppColors.muted)),
           ),
         ],
       ),
