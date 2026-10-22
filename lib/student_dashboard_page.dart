@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'course_registration_page.dart';
 import 'dashboard_data.dart';
-import 'student_academics_page.dart';
 import 'student_announcements_page.dart';
 import 'student_attendance_page.dart';
 import 'student_documents_page.dart';
 import 'student_fees_page.dart';
 import 'student_notifications_page.dart';
-import 'student_profile_page.dart';
 import 'student_results_page.dart';
 import 'student_settings_page.dart';
 import 'student_timetable_page.dart';
@@ -31,8 +29,6 @@ class StudentDashboardPage extends StatefulWidget {
 }
 
 class _StudentDashboardPageState extends State<StudentDashboardPage> {
-  bool _isRefreshing = false;
-
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
@@ -41,14 +37,10 @@ class _StudentDashboardPageState extends State<StudentDashboardPage> {
   }
 
   Future<void> _handleRefresh() async {
-    setState(() => _isRefreshing = true);
     if (widget.onRefresh != null) {
       await widget.onRefresh!();
     } else {
       await Future.delayed(const Duration(milliseconds: 600));
-    }
-    if (mounted) {
-      setState(() => _isRefreshing = false);
     }
   }
 

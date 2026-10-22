@@ -3,7 +3,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_colors.dart';
-import 'auth_gate.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 import 'reset_password_page.dart';

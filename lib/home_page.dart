@@ -2,31 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
-import 'assessment_setup_page.dart';
 import 'attendance_register_page.dart';
-import 'course_registration_page.dart';
 import 'dashboard_data.dart';
-import 'grade_entry_page.dart';
-import 'grade_submission_detail_page.dart';
-import 'resit_management_page.dart';
-import 'staff_announcements_page.dart';
-import 'staff_class_list_page.dart';
-import 'staff_course_detail_page.dart';
 import 'staff_courses_page.dart';
 import 'staff_dashboard_page.dart';
 import 'staff_profile_page.dart';
-import 'staff_timetable_page.dart';
 import 'student_academics_page.dart';
-import 'student_announcements_page.dart';
-import 'student_attendance_page.dart';
 import 'student_dashboard_page.dart';
-import 'student_documents_page.dart';
-import 'student_fees_page.dart';
 import 'student_notifications_page.dart';
 import 'student_profile_page.dart';
-import 'student_results_page.dart';
-import 'student_settings_page.dart';
-import 'student_timetable_page.dart';
 
 class Course {
   final String name;

@@ -404,6 +404,47 @@ class _StudentFeesPageState extends State<StudentFeesPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // 3b. Per-Semester Results Clearance Access
+              const Text('SEMESTER RESULTS FINANCIAL CLEARANCE', style: TextStyle(color: AppColors.muted, fontSize: 10.5, fontWeight: FontWeight.bold, letterSpacing: 0.6)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: _semesterResultsAccessMap.entries.map((e) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(e.key, style: const TextStyle(color: AppColors.onNavy, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: e.value ? const Color(0xFF0F5132) : AppColors.surfaceRaised,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              e.value ? 'Results Accessible' : 'Fee Clearance Required',
+                              style: TextStyle(
+                                color: e.value ? Colors.white : AppColors.muted,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
               const SizedBox(height: 20),
 
               // 4. Charges Breakdown by Semester

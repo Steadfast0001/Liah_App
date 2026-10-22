@@ -95,7 +95,7 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
                 child: Column(
                   children: [
                     SwitchListTile(
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                       title: const Text('High Contrast HCI Mode', style: TextStyle(color: AppColors.onNavy, fontSize: 13, fontWeight: FontWeight.w600)),
                       subtitle: const Text('Enhance visual contrast for campus outdoor lighting', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                       value: _highContrastHciMode,
@@ -147,7 +147,7 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
                 child: Column(
                   children: [
                     SwitchListTile(
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                       title: const Text('Continuous Assessment & Exam Alerts', style: TextStyle(color: AppColors.onNavy, fontSize: 13, fontWeight: FontWeight.w600)),
                       subtitle: const Text('Notify when CA marks or timetables are posted', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                       value: _notificationsExamAlerts,
@@ -155,7 +155,7 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
                     ),
                     const Divider(color: AppColors.border, height: 1),
                     SwitchListTile(
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                       title: const Text('Tuition & Fee Milestone Reminders', style: TextStyle(color: AppColors.onNavy, fontSize: 13, fontWeight: FontWeight.w600)),
                       subtitle: const Text('Reminders for installment clearance deadlines', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                       value: _notificationsFeeAlerts,
@@ -163,7 +163,7 @@ class _StudentSettingsPageState extends State<StudentSettingsPage> {
                     ),
                     const Divider(color: AppColors.border, height: 1),
                     SwitchListTile(
-                      activeColor: AppColors.gold,
+                      activeThumbColor: AppColors.gold,
                       title: const Text('Schedule & Venue Change Notices', style: TextStyle(color: AppColors.onNavy, fontSize: 13, fontWeight: FontWeight.w600)),
                       subtitle: const Text('Real-time alerts when lectures change room', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                       value: _notificationsTimetableAlerts,
