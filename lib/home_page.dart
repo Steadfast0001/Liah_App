@@ -1293,7 +1293,7 @@ class _HomePageState extends State<HomePage> {
                       'Require SMS or Authenticator verification on login',
                       style: TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
-                    activeColor: AppColors.gold,
+                    activeThumbColor: AppColors.gold,
                     value: true,
                     onChanged: (val) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -1399,7 +1399,7 @@ class _HomePageState extends State<HomePage> {
                       'Enhanced contrast for high-sunlight or low-vision readability',
                       style: TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
-                    activeColor: AppColors.gold,
+                    activeThumbColor: AppColors.gold,
                     value: _highContrastHciMode,
                     onChanged: (val) {
                       setState(() => _highContrastHciMode = val);
@@ -1425,7 +1425,7 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
                     subtitle: const Text('Instant alerts when CA or terminal exam marks are published',
                         style: TextStyle(color: AppColors.muted, fontSize: 11)),
-                    activeColor: AppColors.gold,
+                    activeThumbColor: AppColors.gold,
                     value: _notificationsCaAlerts,
                     onChanged: (val) {
                       setState(() => _notificationsCaAlerts = val);
@@ -1438,7 +1438,7 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
                     subtitle: const Text('Notifications when bank slips (UBA/Afriland) are verified',
                         style: TextStyle(color: AppColors.muted, fontSize: 11)),
-                    activeColor: AppColors.gold,
+                    activeThumbColor: AppColors.gold,
                     value: _notificationsFeeAlerts,
                     onChanged: (val) {
                       setState(() => _notificationsFeeAlerts = val);
@@ -1451,7 +1451,7 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(color: AppColors.onNavy, fontSize: 13.5)),
                     subtitle: const Text('Updates on schedule changes or lecture hall shifts',
                         style: TextStyle(color: AppColors.muted, fontSize: 11)),
-                    activeColor: AppColors.gold,
+                    activeThumbColor: AppColors.gold,
                     value: _notificationsTimetableAlerts,
                     onChanged: (val) {
                       setState(() => _notificationsTimetableAlerts = val);
@@ -2617,6 +2617,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 1: HOME / DASHBOARD (Matching Image 5)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildStudentHomeTab(DashboardData data) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -3549,6 +3550,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 2: ACADEMICS / COURSE REGISTRATION (Matching Image 1)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildStudentAcademicsTab(DashboardData data) {
     final allCourses = [
       const _StudentCourseModel(
@@ -4163,6 +4165,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 3: FEES / FINANCIAL CLEARANCE PORTAL (Matching Image 4)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildStudentFeesTab(DashboardData data) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -4998,6 +5001,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 4: RESULTS / GRADE SHEET (Matching Images 2 & 3)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildStudentResultsTab(DashboardData data) {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -6266,6 +6270,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 0: FACULTY HOME (Matching Screenshot 1)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildFacultyHomeTab(DashboardData data) {
     final facultyName = data.displayName.isNotEmpty && data.displayName != 'User'
         ? data.displayName
@@ -7156,6 +7161,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 3: FACULTY GRADES (Matching Screenshot 2)
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildFacultyGradesTab(DashboardData data) {
     // Generate list of 5 students based on Screenshot 2
     final divineExam = _customExamScores['LIAH-2026-SV0390'];
@@ -7592,6 +7598,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 1: FACULTY COURSES
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildFacultyCoursesTab(DashboardData data) {
     final courses = [
       {
@@ -7754,6 +7761,7 @@ SEAL CODE:         SENATE-SWE201-2026-VANCE
   // TAB 2: FACULTY ATTENDANCE
   // ---------------------------------------------------------------------------
 
+  // ignore: unused_element
   Widget _buildFacultyAttendanceTab(DashboardData data) {
     final students = [
       {'name': 'Brenda N. Tabi', 'mat': 'LIAH-2026-SV0482', 'default': 'present'},
